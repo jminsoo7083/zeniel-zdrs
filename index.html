@@ -3017,12 +3017,9 @@ async function saveReport(keepOpen){
       customer_related:getItemChecked(idx,'customer'),
       decision_required:getItemChecked(idx,'decision'),
       is_escalated_to_team:false,
-      is_escalated_to_dept:false,
-      is_escalated_to_exec:false,
       is_escalated_to_meeting:false,
       is_urgent:false,
       urgent_reason:null,
-      _images: imgData, // 이미지 데이터 (Supabase 연결 시 Storage 업로드)
     });
   }
 
@@ -3048,13 +3045,12 @@ async function saveReport(keepOpen){
 
   try{
     if(isEdit && editId && payloads.length>0){
-      await sb.from('daily_reports').update(payloads[0]).eq('id',editId);
+      var {error:updErr} = await sb.from('daily_reports').update(payloads[0]).eq('id',editId);
+      if(updErr) throw updErr;
       toast('업무가 수정되었습니다','ok');
     } else {
-      await sb.from('daily_reports').insert(payloads);
-      if(mUrgent){
-        await sb.from('escalation_logs').insert([{action:'urgent',acted_by:CU.id,acted_by_name:CU.name,note:payloads[0].urgent_reason}]);
-      }
+      var {error:insErr} = await sb.from('daily_reports').insert(payloads);
+      if(insErr) throw insErr;
       toast(payloads.length+'건 등록되었습니다','ok');
     }
     if(keepOpen){
