@@ -960,6 +960,76 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   cursor: pointer; flex-shrink: 0;
 }
 
+
+/* ── 하위 보고 검토 - 사람별 그룹 ── */
+.person-group {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.person-group-hdr {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  background:#f7faf8;
+  cursor:pointer;
+  user-select:none;
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.person-group-hdr:hover { background:#eef5f1; }
+.person-group-hdr.collapsed { border-bottom:none; }
+.person-info { display:flex;align-items:center;gap:10px; }
+.person-av {
+  width:32px;height:32px;
+  background:var(--z-green);color:#fff;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.person-name { font-size:14px;font-weight:700;color:var(--txt-h); }
+.person-dept { font-size:11px;color:var(--txt-m);margin-top:1px; }
+.person-badges { display:flex;gap:6px;align-items:center; }
+.person-cnt { font-size:11px;font-weight:700;background:var(--z-green-s);color:var(--z-green-d);padding:2px 9px;border-radius:10px; }
+.person-issue-cnt { font-size:11px;font-weight:700;background:#fce4eb;color:var(--danger);padding:2px 9px;border-radius:10px; }
+.person-chevron { font-size:12px;color:var(--txt-m);transition:transform .2s; }
+.person-group-hdr.collapsed .person-chevron { transform:rotate(-90deg); }
+.person-group-body { }
+
+/* 댓글 영역 */
+.review-feedback {
+  padding:12px 16px;
+  background:#f0f7f4;
+  border-top:1px solid #c4dfd6;
+}
+.review-feedback-lbl {
+  font-size:10px;font-weight:700;color:var(--z-green-d);
+  letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;
+}
+.feedback-input-row {
+  display:flex;gap:8px;align-items:flex-end;
+}
+.feedback-input-row textarea {
+  flex:1;padding:8px 12px;
+  border:1.5px solid #b8d4c8;border-radius:8px;
+  font-family:inherit;font-size:12px;
+  resize:none;min-height:52px;outline:none;
+  background:#fff;
+  transition:border-color .2s;
+}
+.feedback-input-row textarea:focus { border-color:var(--z-green); }
+.feedback-list { margin-top:8px; }
+.feedback-item {
+  display:flex;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border);
+  font-size:12px;
+}
+.feedback-item:last-child { border-bottom:none; }
+.feedback-who { font-weight:700;color:var(--z-green-d);flex-shrink:0; }
+.feedback-txt { color:var(--txt-b);flex:1; }
+.feedback-date { font-size:10px;color:var(--txt-m);flex-shrink:0; }
+
 </style>
 </head>
 <body>
@@ -1539,32 +1609,28 @@ let ORGS = [];
 let mPri = 1, mSt = '진행', mIssue = false, mUpper = false, mUrgent = false;
 let meetingData = {}; // { company_code: [ reports ] }
 let activeCo = null;
+let reviewFeedbackMap = {};
 
 // 데모 데이터
-const DEMO_USERS = {
-  // ── 전략기획실 ──
+var DEMO_USERS = {
   'jms':    { id:1,  name:'정민수', company_code:'ZENIEL', dept_code:'STRAT_HQ', org_code:'STRAT_HQ',   position_name:'전략기획실장', position_level:5, login_id:'jms' },
-  // 전략기획팀
-  'byr':    { id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',         position_level:2, login_id:'byr' },
-  'jjw':    { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',         position_level:1, login_id:'jjw' },
-  'jyj':    { id:4,  name:'진예주', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'사원',         position_level:1, login_id:'jyj' },
-  // 인사총무팀
-  'kjy':    { id:5,  name:'강정연', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'과장',         position_level:2, login_id:'kjy' },
-  'cdh':    { id:6,  name:'최도훈', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'대리',         position_level:1, login_id:'cdh' },
-  'gsh':    { id:7,  name:'구소희', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'주임',         position_level:1, login_id:'gsh' },
-  'gwy':    { id:8,  name:'고운영', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'사원',         position_level:1, login_id:'gwy' },
-  'khj':    { id:9,  name:'권현지', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'사원',         position_level:1, login_id:'khj' },
-  'ljs':    { id:10, name:'임재석', company_code:'ZENIEL', dept_code:'HR_ADMIN', org_code:'HR_ADMIN',    position_name:'',             position_level:1, login_id:'ljs' },
-  // 교육기획파트
-  'cdh2':   { id:11, name:'최다현', company_code:'ZENIEL', dept_code:'EDU_PLAN', org_code:'EDU_PLAN',    position_name:'과장',         position_level:2, login_id:'cdh2' },
-  // ── 데모 계정 (기존 호환) ──
-  'admin':  { id:1,  name:'정민수', company_code:'ZENIEL', dept_code:'STRAT_HQ', org_code:'STRAT_HQ',   position_name:'전략기획실장', position_level:5, login_id:'admin' },
-  'manager':{ id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',         position_level:2, login_id:'manager' },
-  'staff':  { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',         position_level:1, login_id:'staff' },
+  'byr':    { id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',  position_level:2, login_id:'byr' },
+  'jjw':    { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',  position_level:1, login_id:'jjw' },
+  'jyj':    { id:4,  name:'진예주', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'사원',  position_level:1, login_id:'jyj' },
+  'kjy':    { id:5,  name:'강정연', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'팀장',  position_level:2, login_id:'kjy' },
+  'cdh':    { id:6,  name:'최도훈', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'대리',  position_level:1, login_id:'cdh' },
+  'gsh':    { id:7,  name:'구소희', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'주임',  position_level:1, login_id:'gsh' },
+  'gwy':    { id:8,  name:'고운영', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'사원',  position_level:1, login_id:'gwy' },
+  'khj':    { id:9,  name:'권현지', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'사원',  position_level:1, login_id:'khj' },
+  'ljs':    { id:10, name:'임재석', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'',      position_level:1, login_id:'ljs' },
+  'cdh2':   { id:11, name:'최다현', company_code:'ZENIEL', dept_code:'EDU_PLAN',   org_code:'EDU_PLAN',    position_name:'과장',  position_level:2, login_id:'cdh2' },
+  'admin':  { id:1,  name:'정민수', company_code:'ZENIEL', dept_code:'STRAT_HQ',   org_code:'STRAT_HQ',   position_name:'전략기획실장', position_level:5, login_id:'admin' },
+  'manager':{ id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',  position_level:2, login_id:'manager' },
+  'staff':  { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',  position_level:1, login_id:'staff' }
 };
 
 // 데모 모드: 빈 데이터 (실제 Supabase 연결 후 사용)
-const DEMO_REPORTS = () => { return []; };
+function DEMO_REPORTS(){ return []; }
 
 // ══════════════════════════════════════════════
 // 초기화
@@ -1679,7 +1745,7 @@ async function doLogin(){
   if(!sb){
     const u=DEMO_USERS[id];
     if(u&&pw==='1234'){ CU=u; localStorage.setItem('zdrs2_user',JSON.stringify(CU)); enterApp(); }
-    else err.textContent='로그인 정보가 올바르지 않습니다. ()';
+    else err.textContent='로그인 정보가 올바르지 않습니다.';
     showLd(false); return;
   }
 
@@ -1972,6 +2038,7 @@ function renderMy(rpts){
 // ══════════════════════════════════════════════
 // 하위 보고 검토 (팀장↑)
 // ══════════════════════════════════════════════
+
 async function loadReview(){
   const date=document.getElementById('f-rv-date').value;
 
@@ -2008,10 +2075,8 @@ async function loadReview(){
   }
 
   let rpts=[];
-  // lv5: stage 무관 전체 조회 (팀장 공석/겸직 대응)
-  // lv4: dept_approved 이상
-  // lv3: team_approved 이상
-  // lv2: submitted (본인 팀 하위)
+  reviewFeedbackMap = {};
+
   let targetStage = 'submitted';
   if(CU.position_level >= 4) targetStage = 'dept_approved';
   else if(CU.position_level >= 3) targetStage = 'team_approved';
@@ -2028,14 +2093,12 @@ async function loadReview(){
         .order('created_at',{ascending:false});
 
       if(CU.position_level >= 5){
-        // 전략기획실장: 전체 stage, 본인 제외, 전사
         q = q.neq('author_user_id', CU.user_id);
       } else if(CU.position_level >= 4){
         q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
       } else if(CU.position_level >= 3){
         q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
       } else if(CU.position_level === 2){
-        // 팀장: submitted 단계, 본인 팀 하위
         q = q.eq('stage', targetStage);
         var managedOrgCodes = getManagedOrgCodes(currentOrgCode());
         if(managedOrgCodes.length){
@@ -2052,6 +2115,23 @@ async function loadReview(){
       } else if(data){
         rpts=data;
       }
+
+      // 피드백 로그 로드
+      if(rpts.length){
+        var ids = rpts.map(function(r){ return r.id; });
+        const {data:logs, error:logErr} = await sb.from('escalation_logs')
+          .select('report_id, action, acted_by_name, note, created_at')
+          .in('report_id', ids)
+          .eq('action', 'feedback')
+          .order('created_at', {ascending:false});
+        if(!logErr && logs){
+          logs.forEach(function(l){
+            if(!reviewFeedbackMap[l.report_id]) reviewFeedbackMap[l.report_id] = [];
+            reviewFeedbackMap[l.report_id].push(l);
+          });
+        }
+      }
+
     }catch(e){
       console.error('하위 보고 검토 예외', e);
       toast('하위 보고 조회 중 오류가 발생했습니다', 'err');
@@ -2070,51 +2150,90 @@ async function loadReview(){
     } else if(CU.position_level >= 3){
       hint = CU.company_code ? '<div class="empty-sub">현재 조회 범위 계열사: '+esc(coName(CU.company_code))+'</div>' : '';
     }
-    el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">검토할 보고가 없습니다</div>${hint}</div>`;
+    el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">검토할 보고가 없습니다</div>'+hint+'</div>';
     return;
   }
 
   var layerLabel = CU.position_level >= 4 ? '임원 검토' : (CU.position_level >= 3 ? '부서장 검토' : '팀장 검토');
-  var nextLayer  = CU.position_level >= 4 ? '전사 회의' : (CU.position_level >= 3 ? '임원 단계' : '부서장 단계');
+  var nextLayer  = CU.position_level >= 5 ? '전사 회의' : (CU.position_level >= 4 ? '전사 회의' : (CU.position_level >= 3 ? '임원 단계' : '부서장 단계'));
   var contentField = CU.position_level >= 4 ? 'content_exec' : (CU.position_level >= 3 ? 'content_dept' : 'content_team');
   var escLayer = CU.position_level >= 4 ? 'exec' : (CU.position_level >= 3 ? 'dept' : 'team');
 
-  el.innerHTML=rpts.map(function(r){
-    var editedValue = r[contentField] || (CU.position_level >= 3 ? (r.content_team || '') : '');
-    return `
-    <div class="review-item">
-      <div class="review-hdr">
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
-            <span class="cat">${catName(r.category_code)}</span>
-            <span class="${pc(r.priority_original)} stars">${'★'.repeat(r.priority_original||1)}</span>
-            <span class="bdg ${stBdg(r.status)}">${r.status}</span>
-            ${r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':''}
-            ${r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':''}
-            ${r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':''}
-          </div>
-          <div style="font-size:12px;color:var(--txt-m)">${r.author_name||'-'} · ${r.report_date}</div>
-        </div>
-      </div>
-      <div class="review-orig">
-        <div class="review-orig-lbl">원문 (작성자: ${r.author_name||'-'})</div>
-        <div style="font-size:13px;color:var(--txt-h);line-height:1.6">${esc(r.content_original)}</div>
-        ${r.is_issue?`<div class="rpt-issue-box">⚠ ${esc(r.issue_content||'')}</div>`:''}
-      </div>
-      <div class="review-edit">
-        <div class="review-edit-lbl">${layerLabel} 요약 (${nextLayer} 전달 시 이 내용이 올라갑니다)</div>
-        <textarea id="rv-txt-${r.id}" placeholder="원문을 요약하거나 재정의하세요. 비워두면 이전 단계 내용이 그대로 전달됩니다.">${editedValue}</textarea>
-      </div>
-      <div class="review-actions">
-        <button class="btn btn-success btn-sm" onclick="escalate(${r.id},'${escLayer}')">✅ ${nextLayer} 전달</button>
-        <button class="btn btn-ghost btn-sm" onclick="saveLayerEdit(${r.id},'${escLayer}')">💾 요약 저장</button>
-        <button class="btn btn-ghost btn-sm" onclick="promoteToIssueMaster(${r.id})">📌 지속 이슈 등록</button>
-        <button class="btn btn-ghost btn-sm" style="margin-left:auto;color:var(--txt-m)" onclick="dismiss(${r.id})">보류</button>
-      </div>
-    </div>
-  `;
+  // 사람별 그룹핑
+  var grouped = {};
+  var order = [];
+  rpts.forEach(function(r){
+    var key = r.author_user_id || r.author_name;
+    if(!grouped[key]){
+      grouped[key] = {
+        name: r.author_name,
+        org_code: r.org_code,
+        rpts: []
+      };
+      order.push(key);
+    }
+    grouped[key].rpts.push(r);
+  });
+
+  el.innerHTML = order.map(function(key, idxGroup){
+    var group = grouped[key];
+    var issueCnt = group.rpts.filter(function(r){ return r.is_issue; }).length;
+    var rptHTML = group.rpts.map(function(r){
+      var editedValue = r[contentField] || (CU.position_level >= 3 ? (r.content_team || '') : '');
+      return '<div class="review-item">'
+        + '<div class="review-hdr"><div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
+        + '<span class="cat">'+catName(r.category_code)+'</span>'
+        + '<span class="'+pc(r.priority_original)+' stars">'+'★'.repeat(r.priority_original||1)+'</span>'
+        + '<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        + (r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        + (r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':'')
+        + (r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--txt-m)">'+esc(r.category_code ? catName(r.category_code) : '')+'</div>'
+        + '</div></div>'
+        + '<div class="review-orig">'
+        + '<div class="review-orig-lbl">원문</div>'
+        + '<div style="font-size:13px;color:var(--txt-h);line-height:1.65">'+esc(r.content_original)+'</div>'
+        + (r.is_issue?'<div class="rpt-issue-box">⚠ '+esc(r.issue_content||'')+'</div>':'')
+        + '</div>'
+        + '<div class="review-edit">'
+        + '<div class="review-edit-lbl">'+layerLabel+' 요약 · 전달 메모</div>'
+        + '<textarea id="rv-txt-'+r.id+'" placeholder="상위에 전달할 요약, 판단 요청, 지시사항을 입력하세요. 비워두면 원문이 그대로 전달됩니다.">'+escAttr(editedValue)+'</textarea>'
+        + '</div>'
+        + renderFeedbackBlock(r.id)
+        + '<div class="review-actions">'
+        + '<button class="btn btn-success btn-sm" onclick="escalate('+r.id+', \''+escLayer+'\')">✅ '+nextLayer+' 전달</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="saveLayerEdit('+r.id+', \''+escLayer+'\')">💾 요약 저장</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="saveFeedback('+r.id+')">💬 피드백 저장</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="promoteToIssueMaster('+r.id+')">📌 지속 이슈 등록</button>'
+        + '<button class="btn btn-ghost btn-sm" style="margin-left:auto;color:var(--txt-m)" onclick="dismiss('+r.id+')">보류</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    var collapsedClass = idxGroup > 0 ? ' collapsed' : '';
+    var bodyDisplay = idxGroup > 0 ? 'none' : 'block';
+
+    return '<div class="person-group">'
+      + '<div class="person-group-hdr'+collapsedClass+'" onclick="togglePersonGroup(this)">'
+      + '<div class="person-info">'
+      + '<div class="person-av">'+esc(group.name ? group.name[0] : '?')+'</div>'
+      + '<div><div class="person-name">'+esc(group.name||'-')+'</div><div class="person-dept">'+esc(getDeptName(group.org_code))+'</div></div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<div class="person-badges">'
+      + '<span class="person-cnt">'+group.rpts.length+'건</span>'
+      + (issueCnt?'<span class="person-issue-cnt">⚠ 이슈 '+issueCnt+'</span>':'')
+      + '</div>'
+      + '<span class="person-chevron">▾</span>'
+      + '</div>'
+      + '</div>'
+      + '<div class="person-group-body" style="display:'+bodyDisplay+'">'+rptHTML+'</div>'
+      + '</div>';
   }).join('');
 }
+
 
 // ══════════════════════════════════════════════
 // 이슈 현황
@@ -2364,6 +2483,86 @@ function togIssueMeeting(){
   var b=document.getElementById('im-meeting-box');
   if(w) w.classList.toggle('on', imMeeting);
   if(b) b.textContent = imMeeting ? '✓' : '';
+}
+
+
+
+// ══════════════════════════════════════════════
+// 하위 보고 검토 액션
+// ══════════════════════════════════════════════
+async function escalate(id, layer){
+  var txtEl = document.getElementById('rv-txt-'+id);
+  var editedContent = txtEl ? txtEl.value.trim() : '';
+  if(!sb){ toast('상위 전달 처리됨 (데모)','ok'); loadReview(); return; }
+  showLd(true);
+  try{
+    var stageMap = {'team':'team_approved','dept':'dept_approved','exec':'exec_approved'};
+    var nextStage = stageMap[layer] || 'team_approved';
+    var upd = { stage: nextStage };
+    if(layer==='team'){
+      upd.content_team = editedContent || null;
+    } else if(layer==='dept'){
+      upd.content_dept = editedContent || null;
+    } else if(layer==='exec'){
+      upd.content_exec = editedContent || null;
+      upd.is_escalated_to_meeting = true;
+    }
+    var {error} = await sb.from('daily_reports').update(upd).eq('id', id);
+    if(error) throw error;
+    await sb.from('escalation_logs').insert([{
+      report_id: id, action: 'escalate_'+layer,
+      acted_by_user_id: CU.user_id||null, acted_by_name: CU.name, note: editedContent||null
+    }]);
+    toast('상위 전달 완료','ok');
+    await loadReview();
+    if(layer === 'exec') await loadMeeting();
+  }catch(e){
+    console.error('escalate 오류',e);
+    toast('전달 처리 중 오류가 발생했습니다','err');
+  }
+  showLd(false);
+}
+
+async function saveLayerEdit(id, layer){
+  var txtEl = document.getElementById('rv-txt-'+id);
+  var txt = txtEl ? txtEl.value.trim() : '';
+  if(!sb){ toast('요약 저장됨 (데모)','ok'); return; }
+  try{
+    var upd = {};
+    if(layer==='team') upd.content_team = txt || null;
+    else if(layer==='dept') upd.content_dept = txt || null;
+    else if(layer==='exec') upd.content_exec = txt || null;
+    var {error} = await sb.from('daily_reports').update(upd).eq('id', id);
+    if(error) throw error;
+    await sb.from('escalation_logs').insert([{
+      report_id: id,
+      action: 'save_'+layer,
+      acted_by_user_id: CU.user_id||null,
+      acted_by_name: CU.name,
+      note: txt || null
+    }]);
+    toast('요약 저장 완료','ok');
+  }catch(e){
+    console.error('saveLayerEdit 오류',e);
+    toast('저장 중 오류가 발생했습니다','err');
+  }
+}
+
+async function dismiss(id){
+  if(!sb){ toast('보류 처리됐습니다 (데모)','info'); return; }
+  try{
+    await sb.from('escalation_logs').insert([{
+      report_id: id,
+      action: 'dismiss',
+      acted_by_user_id: CU.user_id||null,
+      acted_by_name: CU.name,
+      note: '보류'
+    }]);
+    toast('보류 처리됐습니다','info');
+  }catch(e){
+    console.error('dismiss 오류', e);
+    toast('보류 처리 중 오류가 발생했습니다','err');
+  }
 }
 
 // 주차 업데이트 모달
@@ -3111,8 +3310,9 @@ async function saveReport(keepOpen){
       addItem();
     } else {
       closeModal();
-      loadMy();
     }
+    await loadMy();
+    if(document.getElementById('panel-review') && document.getElementById('panel-review').classList.contains('on')){ await loadReview(); }
   }catch(e){ console.error('saveReport 오류',e); toast('저장 중 오류가 발생했습니다: '+(e.message||'알 수 없는 오류'),'err'); }
   showLd(false);
 }
