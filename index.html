@@ -3370,6 +3370,7 @@ function pc(p){ return ['','p1c','p2c','p3c'][p||1]||'p1c'; }
 function stBdg(s){ return {'완료':'bdg-done','진행':'bdg-wip','이월':'bdg-next'}[s]||'bdg-wip'; }
 function stageLabel(s){ return {'draft':'작성중','submitted':'제출','team_approved':'팀장확인','dept_approved':'부서확인','exec_approved':'임원확인'}[s]||s; }
 function esc(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function escAttr(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function showLd(v){ document.getElementById('ld').classList.toggle('show',v); }
 function toast(msg,type='info'){
   const c=document.getElementById('toasts');
