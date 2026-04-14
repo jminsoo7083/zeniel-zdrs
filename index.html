@@ -3371,6 +3371,38 @@ function stBdg(s){ return {'완료':'bdg-done','진행':'bdg-wip','이월':'bdg-
 function stageLabel(s){ return {'draft':'작성중','submitted':'제출','team_approved':'팀장확인','dept_approved':'부서확인','exec_approved':'임원확인'}[s]||s; }
 function esc(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
 function escAttr(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// 하위 보고 피드백 블록 렌더링
+function renderFeedbackBlock(reportId){
+  return '<div class="review-feedback">'
+    + '<div class="review-feedback-lbl">💬 피드백 / 메모</div>'
+    + '<div class="feedback-input-row">'
+    + '<textarea id="fb-txt-'+reportId+'" placeholder="피드백, 지시사항, 메모를 입력하세요 (직원에게 표시됩니다)" rows="2"></textarea>'
+    + '<button class="btn btn-primary btn-sm" style="flex-shrink:0;padding:6px 14px" onclick="saveFeedback('+reportId+')">저장</button>'
+    + '</div>'
+    + '</div>';
+}
+
+async function saveFeedback(reportId){
+  var txt = document.getElementById('fb-txt-'+reportId);
+  if(!txt || !txt.value.trim()){ toast('피드백 내용을 입력하세요','err'); return; }
+  if(!sb){ toast('저장됨 (데모)','ok'); return; }
+  try{
+    var {error} = await sb.from('escalation_logs').insert([{
+      report_id: reportId,
+      action: 'feedback',
+      acted_by_user_id: CU.user_id || null,
+      acted_by_name: CU.name,
+      note: txt.value.trim()
+    }]);
+    if(error) throw error;
+    txt.value = '';
+    toast('피드백 저장 완료','ok');
+  }catch(e){
+    console.error('saveFeedback 오류', e);
+    toast('피드백 저장 중 오류가 발생했습니다','err');
+  }
+}
 function showLd(v){ document.getElementById('ld').classList.toggle('show',v); }
 function toast(msg,type='info'){
   const c=document.getElementById('toasts');
