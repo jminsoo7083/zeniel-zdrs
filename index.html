@@ -1030,6 +1030,13 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 .feedback-txt { color:var(--txt-b);flex:1; }
 .feedback-date { font-size:10px;color:var(--txt-m);flex-shrink:0; }
 
+
+/* 검토 버튼 줄바꿈 방지 */
+.review-actions .btn { white-space:nowrap !important; }
+@media(max-width:600px){
+  .review-actions { gap:4px; padding:10px 12px; }
+  .review-actions .btn { font-size:11px; padding:5px 8px; }
+}
 </style>
 </head>
 <body>
@@ -2212,8 +2219,8 @@ async function loadReview(){
         + '</div>';
     }).join('');
 
-    var collapsedClass = idxGroup > 0 ? ' collapsed' : '';
-    var bodyDisplay = idxGroup > 0 ? 'none' : 'block';
+    var collapsedClass = ' collapsed';
+    var bodyDisplay = 'none';
 
     return '<div class="person-group">'
       + '<div class="person-group-hdr'+collapsedClass+'" onclick="togglePersonGroup(this)">'
