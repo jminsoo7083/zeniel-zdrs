@@ -1710,7 +1710,7 @@ async function enterApp(){
   document.getElementById('upos').textContent=u.position_name||'-';
   document.getElementById('sb-name').textContent=u.name;
   document.getElementById('sb-dept').textContent=getDeptName(u.org_code || u.dept_code);
-  document.getElementById('sb-lvl').textContent=getLvlLabel(u.position_level);
+  document.getElementById('sb-lvl').textContent=u.position_name||getLvlLabel(u.position_level);
   document.getElementById('my-sub').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' 기준';
 
   const lv=u.position_level||1;
