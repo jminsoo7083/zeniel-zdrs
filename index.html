@@ -1521,8 +1521,8 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 // ══════════════════════════════════════════════
 // Supabase 설정 (실제 키 교체 필요)
 // ══════════════════════════════════════════════
-const SB_URL = 'https://ognGcuiidtpsxsccwgav.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbmdjdWlpZHRwc3hzY2N3Z2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjEwNjUsImV4cCI6MjA5MTMzNzA2NX0.xAhCwZTITRBvuuL3OifuVq66kuOf8AykgP_9sC9SLMc';
+const SB_URL = 'YOUR_SUPABASE_URL';
+const SB_KEY = 'YOUR_SUPABASE_ANON_KEY';
 const USE_DEMO = (SB_URL === 'YOUR_SUPABASE_URL' || SB_KEY === 'YOUR_SUPABASE_ANON_KEY');
 let sb = null;
 try {
@@ -1721,7 +1721,7 @@ async function enterApp(){
   if(lv>=3){
     document.getElementById('nav-dept').style.display='flex'; // 관리자 섹션 내 부서집약
   }
-  if(lv>=4){
+  if(lv>=1){
     document.getElementById('nav-meeting').style.display='flex';
   }
   if(lv>=5){
@@ -3158,7 +3158,7 @@ function mobGo(tab){
 function updateMobNav(lv){
   if(lv>=2){ var r=document.getElementById('mn-review'); if(r) r.style.display='flex'; }
   if(lv>=3){ var d=document.getElementById('mn-dept'); if(d) d.style.display='flex'; }
-  if(lv>=4){ var m=document.getElementById('mn-meeting'); if(m) m.style.display='flex'; }
+  if(lv>=1){ var m=document.getElementById('mn-meeting'); if(m) m.style.display='flex'; }
 }
 
 
