@@ -2008,6 +2008,10 @@ async function loadReview(){
   }
 
   let rpts=[];
+  // lv5: stage 무관 전체 조회 (팀장 공석/겸직 대응)
+  // lv4: dept_approved 이상
+  // lv3: team_approved 이상
+  // lv2: submitted (본인 팀 하위)
   let targetStage = 'submitted';
   if(CU.position_level >= 4) targetStage = 'dept_approved';
   else if(CU.position_level >= 3) targetStage = 'team_approved';
@@ -2020,19 +2024,25 @@ async function loadReview(){
       let q = sb.from('daily_reports')
         .select('*')
         .eq('report_date',date)
-        .eq('stage',targetStage)
         .order('priority_original',{ascending:false})
         .order('created_at',{ascending:false});
 
-      if(CU.position_level === 2){
+      if(CU.position_level >= 5){
+        // 전략기획실장: 전체 stage, 본인 제외, 전사
+        q = q.neq('author_user_id', CU.user_id);
+      } else if(CU.position_level >= 4){
+        q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
+      } else if(CU.position_level >= 3){
+        q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
+      } else if(CU.position_level === 2){
+        // 팀장: submitted 단계, 본인 팀 하위
+        q = q.eq('stage', targetStage);
         var managedOrgCodes = getManagedOrgCodes(currentOrgCode());
         if(managedOrgCodes.length){
           q = q.in('org_code', managedOrgCodes);
         } else if(currentOrgCode()){
           q = q.eq('org_code', currentOrgCode());
         }
-      } else if(CU.position_level >= 3){
-        q = q.eq('company_code',CU.company_code);
       }
 
       const {data, error} = await q;
