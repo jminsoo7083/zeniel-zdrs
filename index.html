@@ -983,7 +983,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
     </div>
     <div class="login-err" id="lerr"></div>
     <button class="btn-login" onclick="doLogin()">로 그 인</button>
-    <div class="login-hint">운영 시 Supabase Auth 이메일 · 비밀번호를 사용합니다<br><small style="color:#ccc;margin-top:4px;display:block">데모 계정 · admin / 1234</small></div>
+    <div class="login-hint">운영 시 Supabase Auth 이메일 · 비밀번호를 사용합니다<br></div>
     <div style="margin-top:20px;text-align:center;font-size:9px;color:#ddd;letter-spacing:.5px">ⓟ 정민수 · 제니엘그룹 전략기획실 · 2026</div>
   </div>
 </div>
@@ -2716,9 +2716,8 @@ function exportMeeting(){
 var itemCount = 0; // 현재 항목 수
 var editItemId = null; // 수정 모드일 때 ID
 
-function openModal(id){
-  itemImages = {}; // 이미지 상태 초기화
-  var urgent=false;
+async function openModal(id){
+  itemImages = {};
   editItemId = id||null;
   mUrgent = false;
 
@@ -2726,35 +2725,51 @@ function openModal(id){
   document.getElementById('modal-ttl').textContent = isEdit ? '업무 수정' : '업무 등록';
   document.getElementById('m-id').value = id||'';
   document.getElementById('m-edit-mode').value = isEdit ? '1' : '0';
-  
-  
   document.getElementById('m-date').value = today();
   document.getElementById('m-add-btn-wrap').style.display = isEdit ? 'none' : 'block';
   document.getElementById('btn-save-next').style.display = isEdit ? 'none' : 'inline-flex';
 
-  // 상위 전달 체크 초기화
   mUpper = false;
   updUpperUI();
   var ug = document.getElementById('m-upper-g');
   if(ug) ug.style.display = (CU && CU.position_level >= 2) ? 'flex' : 'none';
 
-  // 항목 영역 초기화
   itemCount = 0;
   document.getElementById('m-items-wrap').innerHTML = '';
 
-  if(isEdit && !sb){
-    // 수정 모드 - 기존 데이터 로드
-    var all = DEMO_REPORTS();
-    var r = null;
-    for(var i=0;i<all.length;i++){ if(all[i].id===id){ r=all[i]; break; } }
-    if(r){
-      document.getElementById('m-date').value = r.report_date;
-      addItem(r); // 기존 데이터로 항목 1개 추가
+  if(isEdit){
+    if(!sb){
+      // 데모 모드
+      var all = DEMO_REPORTS();
+      var r = null;
+      for(var i=0;i<all.length;i++){ if(all[i].id===id){ r=all[i]; break; } }
+      if(r){ document.getElementById('m-date').value = r.report_date; addItem(r); }
+      else { addItem(); }
     } else {
-      addItem();
+      // 운영 모드: Supabase에서 기존 데이터 조회
+      showLd(true);
+      try{
+        var res = await sb.from('daily_reports').select('*').eq('id', id).single();
+        if(res.error || !res.data){
+          toast('기존 데이터를 불러오지 못했습니다','err');
+          addItem();
+        } else {
+          var data = res.data;
+          document.getElementById('m-date').value = data.report_date || today();
+          mUpper = !!data.is_escalated_to_meeting;
+          updUpperUI();
+          addItem(data);
+        }
+      }catch(e){
+        console.error('openModal 로드 오류', e);
+        toast('수정 데이터 로드 중 오류가 발생했습니다','err');
+        addItem();
+      }finally{
+        showLd(false);
+      }
     }
   } else {
-    addItem(); // 기본 항목 1개
+    addItem();
   }
 
   document.getElementById('rpt-modal').classList.add('open');
@@ -2859,6 +2874,11 @@ function addItem(prefill){
       var issEl = document.getElementById('missue-'+idx);
       if(issEl) issEl.value = defaultIssueContent;
     }
+    // customer_related, decision_required 체크 복원
+    var custEl = document.getElementById('mcheck-customer-'+idx);
+    if(custEl && prefill.customer_related) custEl.classList.add('on');
+    var decEl = document.getElementById('mcheck-decision-'+idx);
+    if(decEl && prefill.decision_required) decEl.classList.add('on');
   }
 
   // 기본 상태 선택 (prefill 없을 때)
@@ -3023,8 +3043,8 @@ async function saveReport(keepOpen){
       status: getItemStatus(idx),
       is_issue: isIssue,
       issue_content: isIssue ? issueContent : null,
-      customer_related: false,
-      decision_required: false,
+      customer_related: getItemChecked(idx, 'customer'),
+      decision_required: getItemChecked(idx, 'decision'),
       is_selected_team: false,
       is_selected_dept: false,
       is_selected_exec: false,
