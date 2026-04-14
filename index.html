@@ -1679,7 +1679,7 @@ async function doLogin(){
   if(!sb){
     const u=DEMO_USERS[id];
     if(u&&pw==='1234'){ CU=u; localStorage.setItem('zdrs2_user',JSON.stringify(CU)); enterApp(); }
-    else err.textContent='로그인 정보가 올바르지 않습니다. (데모: admin/1234)';
+    else err.textContent='로그인 정보가 올바르지 않습니다. ()';
     showLd(false); return;
   }
 
@@ -1896,6 +1896,26 @@ function currentOrgCode(){
   return (CU && (CU.org_code || CU.dept_code)) || null;
 }
 
+function getManagedOrgCodes(rootOrgCode){
+  if(!rootOrgCode) return [];
+  var result = [];
+  var queue = [rootOrgCode];
+  var seen = {};
+  while(queue.length){
+    var code = queue.shift();
+    if(!code || seen[code]) continue;
+    seen[code] = true;
+    result.push(code);
+    (ORGS || []).forEach(function(o){
+      if(o.parent_org_code === code && !seen[o.org_code]){
+        queue.push(o.org_code);
+      }
+    });
+  }
+  return result;
+}
+
+
 // ══════════════════════════════════════════════
 // 내 업무일지
 // ══════════════════════════════════════════════
@@ -1956,7 +1976,22 @@ async function loadReview(){
   const date=document.getElementById('f-rv-date').value;
 
   // 내 오늘 업무 요약 표시
-  var myRpts = DEMO_REPORTS().filter(function(r){ return r.author_id===CU.id; });
+  var myRpts = [];
+  if(!sb){
+    myRpts = DEMO_REPORTS().filter(function(r){ return r.author_id===CU.id; });
+  } else {
+    try{
+      var myQ = sb.from('daily_reports').select('*')
+        .eq('author_user_id', CU.user_id || CU.id)
+        .eq('report_date', date)
+        .order('created_at',{ascending:false});
+      var myRes = await myQ;
+      if(myRes && myRes.data) myRpts = myRes.data;
+    }catch(e){
+      console.error('내 오늘 업무 요약 조회 실패', e);
+    }
+  }
+
   var sumEl=document.getElementById('my-summary-in-review');
   var sumCont=document.getElementById('my-summary-content');
   if(sumEl && sumCont && myRpts.length){
@@ -1964,7 +1999,7 @@ async function loadReview(){
     sumCont.innerHTML=myRpts.slice(0,3).map(function(r){
       return '<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed var(--border)">'
         +'<span class="cat" style="flex-shrink:0">'+catName(r.category_code)+'</span>'
-        +'<span style="font-size:12px;color:var(--txt-b);flex:1">'+esc(r.content_original.substring(0,50))+(r.content_original.length>50?'...':'')+'</span>'
+        +'<span style="font-size:12px;color:var(--txt-b);flex:1">'+esc((r.content_original||'').substring(0,50))+((r.content_original||'').length>50?'...':'')+'</span>'
         +'<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
         +'</div>';
     }).join('')+(myRpts.length>3?'<div style="font-size:11px;color:var(--txt-m);padding-top:6px">외 '+(myRpts.length-3)+'건...</div>':'');
@@ -1982,26 +2017,59 @@ async function loadReview(){
   }
   else{
     try{
-      let q = sb.from('daily_reports').select('*').eq('report_date',date).eq('stage',targetStage).order('priority_original',{ascending:false});
-      if(CU.position_level === 2) q = q.eq('org_code', currentOrgCode());
-      if(CU.position_level >= 3) q = q.eq('company_code',CU.company_code);
-      const{data}=await q;
-      if(data)rpts=data;
-    }catch(e){}
+      let q = sb.from('daily_reports')
+        .select('*')
+        .eq('report_date',date)
+        .eq('stage',targetStage)
+        .order('priority_original',{ascending:false})
+        .order('created_at',{ascending:false});
+
+      if(CU.position_level === 2){
+        var managedOrgCodes = getManagedOrgCodes(currentOrgCode());
+        if(managedOrgCodes.length){
+          q = q.in('org_code', managedOrgCodes);
+        } else if(currentOrgCode()){
+          q = q.eq('org_code', currentOrgCode());
+        }
+      } else if(CU.position_level >= 3){
+        q = q.eq('company_code',CU.company_code);
+      }
+
+      const {data, error} = await q;
+      if(error){
+        console.error('하위 보고 검토 조회 실패', error);
+        toast('하위 보고 조회 실패: ' + (error.message || '권한 또는 쿼리 오류'), 'err');
+      } else if(data){
+        rpts=data;
+      }
+    }catch(e){
+      console.error('하위 보고 검토 예외', e);
+      toast('하위 보고 조회 중 오류가 발생했습니다', 'err');
+    }
   }
+
   const cnt=rpts.length;
   const bdg=document.getElementById('bdg-review');
   bdg.textContent=cnt; bdg.style.display=cnt?'inline-block':'none';
 
   const el=document.getElementById('review-body');
-  if(!rpts.length){el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">검토할 보고가 없습니다</div></div>`;return;}
+  if(!rpts.length){
+    var hint = '';
+    if(CU.position_level === 2){
+      hint = currentOrgCode() ? '<div class="empty-sub">현재 조회 범위 조직: '+esc(getDeptName(currentOrgCode()))+'</div>' : '';
+    } else if(CU.position_level >= 3){
+      hint = CU.company_code ? '<div class="empty-sub">현재 조회 범위 계열사: '+esc(coName(CU.company_code))+'</div>' : '';
+    }
+    el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">검토할 보고가 없습니다</div>${hint}</div>`;
+    return;
+  }
 
   var layerLabel = CU.position_level >= 4 ? '임원 검토' : (CU.position_level >= 3 ? '부서장 검토' : '팀장 검토');
   var nextLayer  = CU.position_level >= 4 ? '전사 회의' : (CU.position_level >= 3 ? '임원 단계' : '부서장 단계');
   var contentField = CU.position_level >= 4 ? 'content_exec' : (CU.position_level >= 3 ? 'content_dept' : 'content_team');
   var escLayer = CU.position_level >= 4 ? 'exec' : (CU.position_level >= 3 ? 'dept' : 'team');
 
-  el.innerHTML=rpts.map(r=>{
+  el.innerHTML=rpts.map(function(r){
     var editedValue = r[contentField] || (CU.position_level >= 3 ? (r.content_team || '') : '');
     return `
     <div class="review-item">
@@ -2034,58 +2102,9 @@ async function loadReview(){
         <button class="btn btn-ghost btn-sm" style="margin-left:auto;color:var(--txt-m)" onclick="dismiss(${r.id})">보류</button>
       </div>
     </div>
-  `}).join('');
+  `;
+  }).join('');
 }
-
-async function escalate(id, layer){
-  const txtEl=document.getElementById(`rv-txt-${id}`);
-  const editedContent=txtEl?txtEl.value.trim():'';
-  if(!sb){ toast('상위 전달 처리됨 (데모)','ok'); loadReview(); return; }
-  try{
-    const upd={};
-    if(layer==='team'){
-      upd.stage='team_approved';
-      upd.is_escalated_to_team=true;
-      if(editedContent) upd.content_team=editedContent;
-      upd.team_edited_by=CU.id;
-      upd.team_edited_at=new Date().toISOString();
-    } else if(layer==='dept'){
-      upd.stage='dept_approved';
-      upd.is_escalated_to_dept=true;
-      if(editedContent) upd.content_dept=editedContent;
-      upd.dept_edited_by=CU.id;
-      upd.dept_edited_at=new Date().toISOString();
-    } else if(layer==='exec'){
-      upd.stage='exec_approved';
-      upd.is_escalated_to_exec=true;
-      upd.is_escalated_to_meeting=true;
-      if(editedContent) upd.content_exec=editedContent;
-      upd.exec_edited_by=CU.id;
-      upd.exec_edited_at=new Date().toISOString();
-    }
-    await sb.from('daily_reports').update(upd).eq('id',id);
-    await sb.from('escalation_logs').insert([{report_id:id,action:'escalate_'+layer,acted_by:CU.id,acted_by_name:CU.name}]);
-    toast('상위 전달 완료','ok'); loadReview();
-  }catch(e){toast('처리 실패','err');}
-}
-
-async function saveLayerEdit(id, layer){
-  var _te=document.getElementById('rv-txt-'+id); var txt=_te?_te.value.trim():'';
-  if(!sb){ toast('저장됨 (데모)','ok'); return; }
-  try{
-    var upd = {};
-    if(layer==='team'){
-      upd.content_team=txt; upd.team_edited_by=CU.id; upd.team_edited_at=new Date().toISOString();
-    } else if(layer==='dept'){
-      upd.content_dept=txt; upd.dept_edited_by=CU.id; upd.dept_edited_at=new Date().toISOString();
-    } else if(layer==='exec'){
-      upd.content_exec=txt; upd.exec_edited_by=CU.id; upd.exec_edited_at=new Date().toISOString();
-    }
-    await sb.from('daily_reports').update(upd).eq('id',id);
-    toast('요약 저장 완료','ok');
-  }catch(e){toast('저장 실패','err');}
-}
-function dismiss(id){ toast('보류 처리됨','info'); }
 
 // ══════════════════════════════════════════════
 // 이슈 현황
@@ -2739,14 +2758,12 @@ async function openModal(id){
 
   if(isEdit){
     if(!sb){
-      // 데모 모드
       var all = DEMO_REPORTS();
       var r = null;
       for(var i=0;i<all.length;i++){ if(all[i].id===id){ r=all[i]; break; } }
       if(r){ document.getElementById('m-date').value = r.report_date; addItem(r); }
       else { addItem(); }
     } else {
-      // 운영 모드: Supabase에서 기존 데이터 조회
       showLd(true);
       try{
         var res = await sb.from('daily_reports').select('*').eq('id', id).single();
@@ -2754,11 +2771,11 @@ async function openModal(id){
           toast('기존 데이터를 불러오지 못했습니다','err');
           addItem();
         } else {
-          var data = res.data;
-          document.getElementById('m-date').value = data.report_date || today();
-          mUpper = !!data.is_escalated_to_meeting;
+          var d = res.data;
+          document.getElementById('m-date').value = d.report_date || today();
+          mUpper = !!d.is_escalated_to_meeting;
           updUpperUI();
-          addItem(data);
+          addItem(d);
         }
       }catch(e){
         console.error('openModal 로드 오류', e);
@@ -2874,11 +2891,6 @@ function addItem(prefill){
       var issEl = document.getElementById('missue-'+idx);
       if(issEl) issEl.value = defaultIssueContent;
     }
-    // customer_related, decision_required 체크 복원
-    var custEl = document.getElementById('mcheck-customer-'+idx);
-    if(custEl && prefill.customer_related) custEl.classList.add('on');
-    var decEl = document.getElementById('mcheck-decision-'+idx);
-    if(decEl && prefill.decision_required) decEl.classList.add('on');
   }
 
   // 기본 상태 선택 (prefill 없을 때)
