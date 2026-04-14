@@ -3380,6 +3380,18 @@ function esc(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/<
 function escAttr(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // 하위 보고 피드백 블록 렌더링
+function togglePersonGroup(hdr){
+  var body = hdr.nextElementSibling;
+  var isCollapsed = hdr.classList.contains('collapsed');
+  if(isCollapsed){
+    hdr.classList.remove('collapsed');
+    body.style.display = 'block';
+  } else {
+    hdr.classList.add('collapsed');
+    body.style.display = 'none';
+  }
+}
+
 function renderFeedbackBlock(reportId){
   return '<div class="review-feedback">'
     + '<div class="review-feedback-lbl">💬 피드백 / 메모</div>'
