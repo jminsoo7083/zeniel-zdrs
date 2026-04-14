@@ -2998,28 +2998,30 @@ async function saveReport(keepOpen){
     var issueContent = issueEl ? issueEl.value.trim() : '';
     if(isIssue && !issueContent){ toast((i+1)+'번 이슈 내용을 입력하세요','err'); valid=false; break; }
 
-    var imgData = itemImages[idx] || [];
     var weekInfo = getWeekInfo(date);
     payloads.push({
-      report_date:date,
-      year_num:getWeekInfo(date).year_num,
-      week_number:getWeekInfo(date).week_number,
-      week_number: weekInfo.week_number,
+      report_date: date,
       year_num: weekInfo.year_num,
-      stage:'submitted',
-      author_user_id:CU.user_id || CU.id, author_name:CU.name, author_position_level:CU.position_level,
-      company_code:CU.company_code, org_code:currentOrgCode(),
-      category_code:cat, content_original:content,
-      priority_original:getItemPriority(idx),
-      status:getItemStatus(idx),
-      is_issue:isIssue,
-      issue_content:isIssue?issueContent:null,
-      customer_related:getItemChecked(idx,'customer'),
-      decision_required:getItemChecked(idx,'decision'),
-      is_escalated_to_team:false,
-      is_escalated_to_meeting:false,
-      is_urgent:false,
-      urgent_reason:null,
+      week_number: weekInfo.week_number,
+      stage: 'submitted',
+      author_user_id: CU.user_id,
+      author_name: CU.name,
+      author_position_level: CU.position_level,
+      company_code: CU.company_code,
+      org_code: currentOrgCode(),
+      category_code: cat,
+      content_original: content,
+      priority_original: getItemPriority(idx),
+      status: getItemStatus(idx),
+      is_issue: isIssue,
+      issue_content: isIssue ? issueContent : null,
+      customer_related: false,
+      decision_required: false,
+      is_selected_team: false,
+      is_selected_dept: false,
+      is_selected_exec: false,
+      is_escalated_to_meeting: false,
+      is_urgent: false,
     });
   }
 
