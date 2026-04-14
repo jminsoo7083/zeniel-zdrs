@@ -1316,7 +1316,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
               <div class="fg2"><label>이메일</label><input id="a-lid" placeholder="사번 또는 이메일"></div>
               <div class="fg2 ffull"><label>초기 비밀번호</label><input type="password" id="a-pw" placeholder="초기 비밀번호"></div>
             </div>
-            <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="regUser()">사용자 등록</button>
+            <div style="background:#f0f5f3;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-size:12px;color:var(--txt-m);margin-top:8px">사용자 등록은 Supabase Auth 또는 관리자 SQL로 처리됩니다</div>
           </div>
         </div>
         <div class="card">
@@ -1569,7 +1569,7 @@ const DEMO_REPORTS = () => { return []; };
 // ══════════════════════════════════════════════
 // 초기화
 // ══════════════════════════════════════════════
-window.addEventListener('DOMContentLoaded', async () => {
+window.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('app').style.display='none';
   setHeaderInfo();
   document.getElementById('m-date').value = today();
@@ -1577,29 +1577,56 @@ window.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('f-rv-date').value = today();
   document.getElementById('f-dp-date').value = today();
 
-  if(!sb){
-    const saved = localStorage.getItem('zdrs2_user');
-    if(saved) { try{ CU=JSON.parse(saved); enterApp(); }catch(e){ localStorage.removeItem('zdrs2_user'); } }
-  } else {
-    try{
-      const { data } = await sb.auth.getUser();
-      if(data && data.user){
-        await loadCurrentUserProfile(data.user.id);
+  if(sb){
+    // onAuthStateChange: 세션 만료/탭 전환/로그아웃 자동 감지
+    sb.auth.onAuthStateChange(function(event, session) {
+      if(event === 'SIGNED_OUT' || !session){
+        if(CU){ CU = null; resetUI(); }
+        return;
       }
-    }catch(e){
-      console.error('auth session load failed', e);
-    }
+      if(event === 'SIGNED_IN' && session && session.user && !CU){
+        loadCurrentUserProfile(session.user.id);
+      }
+    });
+
+    // 초기 세션 복원
+    sb.auth.getUser().then(function(res) {
+      if(res && res.data && res.data.user && !CU){
+        loadCurrentUserProfile(res.data.user.id);
+      }
+    }).catch(function(e){ console.error('세션 복원 실패', e); });
   }
 
-  document.addEventListener('keydown', e => { if(e.key==='Enter' && document.getElementById('app').style.display==='none') doLogin(); });
+  document.addEventListener('keydown', function(e) {
+    if(e.key==='Enter' && document.getElementById('app').style.display==='none') doLogin();
+  });
 });
+
+function resetUI(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-wrap').style.display='';
+  document.getElementById('lid').value='';
+  document.getElementById('lpw').value='';
+  document.getElementById('lerr').textContent='';
+  var mn = document.getElementById('mob-nav'); if(mn) mn.style.display='none';
+  ['nav-review-sec','nav-admin-sec'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  ['nav-dept','nav-meeting'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  document.querySelectorAll('.nav').forEach(function(n){ n.classList.remove('on'); });
+  var el1=document.querySelector('[data-tab="my"]'); if(el1) el1.classList.add('on');
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+  var el2=document.getElementById('panel-my'); if(el2) el2.classList.add('on');
+}
 
 function today(){ return new Date().toISOString().split('T')[0]; }
 
 function setHeaderInfo(){
   const d = new Date();
   const days=['일','월','화','수','목','금','토'];
-  document.getElementById('hdr-date').textContent = `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} (${days[d.getDay()]})`;
+  document.getElementById('hdr-date').textContent = d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' ('+days[d.getDay()]+')';
   var _w=getWeek(d);
   var _wd=d.getDay(); var _diff=d.getDate()-(_wd===0?6:_wd-1);
   var _mon=new Date(d); _mon.setDate(_diff);
@@ -1674,28 +1701,9 @@ async function doLogin(){
   showLd(false);
 }
 async function doLogout(){
-  if(sb){
-    try{ await sb.auth.signOut(); }catch(e){ console.error(e); }
-  }else{
-    localStorage.removeItem('zdrs2_user');
-  }
-  CU=null;
-  document.getElementById('app').style.display='none';
-  document.getElementById('login-wrap').style.display='';
-  document.getElementById('lid').value='';
-  document.getElementById('lpw').value='';
-  document.getElementById('lerr').textContent='';
-  document.getElementById('mob-nav').style.display='none';
-  ['nav-review-sec','nav-admin-sec'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.style.display='none';
-  });
-  ['nav-dept','nav-meeting'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.style.display='none';
-  });
-  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
-  var _el1=document.querySelector('[data-tab="my"]'); if(_el1) _el1.classList.add('on');
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-  var _el2=document.getElementById('panel-my'); if(_el2) _el2.classList.add('on');
+  CU = null;
+  if(sb){ try{ await sb.auth.signOut(); }catch(e){ console.error(e); } }
+  resetUI();
 }
 
 // ══════════════════════════════════════════════
@@ -3063,7 +3071,7 @@ async function saveReport(keepOpen){
       closeModal();
       loadMy();
     }
-  }catch(e){ toast('저장 중 오류 발생','err'); }
+  }catch(e){ console.error('saveReport 오류',e); toast('저장 중 오류가 발생했습니다: '+(e.message||'알 수 없는 오류'),'err'); }
   showLd(false);
 }
 
@@ -3101,8 +3109,8 @@ async function loadUsers(){
 // 유틸
 // ══════════════════════════════════════════════
 function go(tab){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.nav').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+  document.querySelectorAll('.nav').forEach(function(n){ n.classList.remove('on'); });
   var _pe=document.getElementById('panel-'+tab); if(_pe) _pe.classList.add('on');
   var _ne=document.querySelector('[data-tab="'+tab+'"]'); if(_ne) _ne.classList.add('on');
   // 모바일 하단 네비 동기화
