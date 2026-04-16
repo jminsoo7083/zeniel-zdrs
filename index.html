@@ -1488,12 +1488,12 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 
 <!-- 주간보고 작성 모달 -->
   <div class="modal-bg" id="weekly-modal-bg" style="display:none" onclick="closeWeeklyModal(event)">
-    <div class="modal" style="max-width:700px;width:95vw" onclick="event.stopPropagation()">
+    <div class="modal" style="max-width:700px;width:95vw;max-height:90vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
       <div class="modal-hdr">
         <div class="modal-ttl">📋 주간 업무보고 작성</div>
         <button class="modal-close" onclick="closeWeeklyModal()">✕</button>
       </div>
-      <div class="modal-body" style="padding:20px;max-height:80vh;overflow-y:auto">
+      <div class="modal-body" style="padding:20px;overflow-y:auto;flex:1;min-height:0">
         <div class="fg2" style="margin-bottom:12px">
           <label>대상 주차</label>
           <select id="wk-modal-week" onchange="loadWeeklyDailyList()" style="width:100%"></select>
@@ -1519,7 +1519,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
           <textarea id="wk-decision" placeholder="상위 판단이 필요한 사항이나 지원 요청 내용을 작성하세요" style="min-height:70px"></textarea>
         </div>
       </div>
-      <div class="modal-ftr">
+      <div class="modal-ftr" style="flex-shrink:0">
         <button class="btn btn-ghost" onclick="closeWeeklyModal()">취소</button>
         <button class="btn btn-primary" onclick="saveWeeklyReport()">💾 주간보고 저장</button>
       </div>
