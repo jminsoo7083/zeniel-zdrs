@@ -1,0 +1,4355 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Supabase 연결 시 아래 주석 해제 -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>ZDRS v2 · 제니엘그룹 업무보고 시스템</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* ── 제니엘 공식 브랜드 컬러 ── */
+  --z-green:  #009c64;          /* ZENIEL GREEN (메인 브랜드) */
+  --z-green-d:#007a4e;          /* 그린 다크 (hover) */
+  --z-green-s:#e6f7f1;          /* 그린 소프트 (배경) */
+  --z-navy:   #1a2a3a;          /* 다크 베이스 (헤더/사이드) */
+  --z-navy-d: #111e2b;          /* 네이비 다크 */
+  --z-crimson:#b91a3d;          /* 진홍색 - 정열·노력 (이슈/긴급) */
+  --z-purple: #0008CC;           /* 남보라색 - 미래 */
+  --z-gold:   #f1d732;          /* 골색 - 화합·단결·평화 */
+
+  /* ── 시스템 기능 컬러 (브랜드 기반) ── */
+  --accent:      var(--z-green);
+  --accent-soft: var(--z-green-s);
+  --bg:          #f0f5f3;       /* 그린 톤 배경 */
+  --bg-card:     #FFFFFF;
+  --border:      #d4e8e0;       /* 그린 톤 보더 */
+  --border-dark: #b8d4c8;
+
+  /* ── 텍스트 ── */
+  --txt-h:    #0f1f17;          /* 그린 다크 베이스 */
+  --txt-b:    #2d4a3e;
+  --txt-s:    #5a7a6e;
+  --txt-m:    #8aaa9e;
+
+  /* ── 상태 컬러 ── */
+  --ok:     #009c64;            /* 완료 = 브랜드 그린 */
+  --warn:   #c8860a;
+  --danger: var(--z-crimson);   /* 위험/이슈 = 진홍색 */
+  --info:   #0a7abf;
+
+  /* ── 우선순위 ── */
+  --p1: #8aaa9e;                /* 일반 - 뮤트 그린 */
+  --p2: #0a7abf;                /* 주요 - 블루 */
+  --p3: var(--z-crimson);       /* 긴급 - 진홍 */
+
+  /* ── 레이아웃 ── */
+  --sidebar: 240px;
+  --header:  60px;
+  --mob-nav: 56px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt-b);font-size:13px;line-height:1.6;}
+
+/* ── 로그인 ── */
+#login-wrap{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+  background:linear-gradient(155deg, #0f1f17 0%, #1a3528 40%, #0d2a1e 100%);
+  position:relative;overflow:hidden;
+}
+#login-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.login-card{
+  background:#fff;border-radius:20px;padding:48px 44px;
+  width:380px;max-width:94vw;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  position:relative;z-index:1;
+}
+.login-brand{text-align:center;margin-bottom:36px;}
+.login-brand .mark{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:56px;height:56px;
+  background:linear-gradient(135deg,var(--z-green),var(--z-green-d));
+  border-radius:16px;margin-bottom:16px;
+  box-shadow:0 8px 24px rgba(0,100,60,.25);
+}
+.login-brand .mark span{font-size:22px;font-weight:800;color:#fff;letter-spacing:-1px;}
+.login-brand h1{font-size:24px;font-weight:800;color:var(--z-navy-d);letter-spacing:-1px;}
+.login-brand h1 em{color:var(--z-green);font-style:normal;}
+.login-brand p{font-size:11px;color:var(--txt-m);margin-top:4px;letter-spacing:.5px;}
+.login-divider{height:2px;background:linear-gradient(90deg,var(--z-green),var(--z-green-d));border-radius:2px;margin:0 0 28px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:10px;font-weight:700;color:var(--txt-s);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;}
+.fg input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:13px;color:var(--txt-h);outline:none;transition:border-color .2s;}
+.fg input:focus{border-color:var(--z-green);box-shadow:0 0 0 3px rgba(0,156,100,.12);}
+.btn-login{width:100%;padding:13px;background:var(--z-green);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:6px;transition:background .2s;}
+.btn-login:hover{background:var(--z-green-d);}
+.login-err{font-size:12px;color:var(--danger);text-align:center;margin-top:10px;min-height:18px;}
+.login-hint{text-align:center;font-size:11px;color:var(--txt-m);margin-top:20px;}
+
+/* ── 앱 레이아웃 ── */
+#app{display:none;}
+
+.hdr{
+  position:fixed;top:0;left:0;right:0;height:var(--header);
+  background:linear-gradient(135deg, var(--z-navy-d) 0%, var(--z-navy) 100%);
+  display:flex;align-items:center;
+  border-bottom:3px solid var(--z-green);
+  z-index:200;
+}
+.hdr-logo{
+  width:var(--sidebar);padding:0 20px;
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+  border-right:1px solid rgba(255,255,255,.08);
+}
+.hdr-logo-mark{
+  width:32px;height:32px;background:var(--z-green);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;color:#fff;letter-spacing:-1px;
+}
+.hdr-logo-txt .t1{font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.hdr-logo-txt .t2{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;}
+.hdr-center{flex:1;padding:0 20px;display:flex;align-items:center;gap:16px;}
+.hdr-date{font-family:monospace,monospace;font-size:12px;color:rgba(255,255,255,.5);}
+.hdr-week{
+  font-family:monospace,monospace;font-size:11px;
+  background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
+  padding:3px 10px;border-radius:20px;
+}
+.hdr-right{display:flex;align-items:center;gap:12px;padding-right:20px;}
+.user-pill{
+  display:flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.08);padding:5px 14px 5px 8px;border-radius:24px;
+}
+.user-av{
+  width:26px;height:26px;background:var(--z-green);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#fff;
+}
+.user-info .un{font-size:12px;font-weight:600;color:#fff;}
+.user-info .up{font-size:10px;color:rgba(255,255,255,.5);}
+.btn-lo{background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;cursor:pointer;padding:4px 8px;border-radius:4px;font-family:inherit;}
+.btn-lo:hover{color:#fff;}
+
+/* ── 사이드바 ── */
+.sdb{
+  position:fixed;top:var(--header);left:0;bottom:0;
+  width:var(--sidebar);background:#fff;
+  border-right:1px solid var(--border);
+  overflow-y:auto;z-index:100;
+}
+.sdb-section{padding:16px 12px 8px;}
+.sdb-sec-lbl{
+  font-size:9px;font-weight:700;color:var(--txt-m);
+  letter-spacing:2px;text-transform:uppercase;
+  padding:0 8px;margin-bottom:6px;
+}
+.nav{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:10px;cursor:pointer;
+  color:var(--txt-s);font-weight:500;font-size:13px;
+  transition:all .15s;margin-bottom:2px;user-select:none;
+}
+.nav:hover{background:var(--z-green-s);color:var(--z-green-d);}
+.nav.on{background:var(--z-green-s);color:var(--z-green-d);font-weight:700;}
+.nav .ico{font-size:15px;width:20px;text-align:center;}
+.nav .bdg{
+  margin-left:auto;background:var(--danger);color:#fff;
+  font-size:10px;font-weight:700;padding:1px 6px;
+  border-radius:10px;min-width:18px;text-align:center;
+}
+
+.sdb-me{
+  margin:12px;padding:14px;
+  background:linear-gradient(135deg,#e8f4f0,#d4ede5);
+  border:1px solid var(--border);border-radius:12px;
+}
+.sdb-me-name{font-weight:700;font-size:14px;color:var(--txt-h);}
+.sdb-me-dept{font-size:11px;color:var(--txt-m);margin-top:2px;}
+.lvl-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  margin-top:8px;padding:3px 10px;border-radius:6px;
+  font-size:10px;font-weight:700;
+  background:var(--z-green);color:#fff;
+}
+
+/* ── 메인 ── */
+.main{
+  margin-left:var(--sidebar);margin-top:var(--header);
+  padding:28px 28px 40px;
+  min-height:calc(100vh - var(--header));
+  height:calc(100vh - var(--header));
+  overflow-y:auto;
+}
+.panel{display:none;}
+.panel.on{display:block;}
+
+/* 페이지 헤더 */
+.pg-hdr{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px;}
+.pg-title{font-size:22px;font-weight:800;color:var(--txt-h);letter-spacing:-0.8px;}
+.pg-sub{font-size:12px;color:var(--txt-m);margin-top:3px;}
+
+/* 버튼 */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-primary{background:var(--z-green);color:#fff;}
+.btn-primary:hover{background:var(--z-green-d);}
+.btn-navy{background:var(--z-green);color:#fff;}
+.btn-navy:hover{background:var(--z-green-d);}
+.btn-ghost{background:#fff;color:var(--txt-s);border:1.5px solid var(--border);}
+.btn-ghost:hover{border-color:var(--z-green);color:var(--z-green-d);}
+.btn-danger{background:var(--danger);color:#fff;}
+.btn-success{background:var(--ok);color:#fff;}
+.btn-urgent{background:#FEF2F2;color:var(--danger);border:1.5px solid #FECACA;}
+.btn-sm{padding:5px 10px;font-size:12px;border-radius:6px;}
+.btn-xs{padding:3px 8px;font-size:11px;border-radius:5px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.kpi{background:#fff;border-radius:14px;padding:18px 20px;border:1px solid var(--border);position:relative;overflow:hidden;}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi.blue::after{background:var(--z-green);}
+.kpi.red::after{background:var(--danger);}
+.kpi.green::after{background:var(--z-green);}
+.kpi.orange::after{background:var(--warn);}
+.kpi-lbl{font-size:10px;font-weight:600;color:var(--txt-m);letter-spacing:.5px;text-transform:uppercase;}
+.kpi-val{font-family:monospace,monospace;font-size:32px;font-weight:700;color:var(--txt-h);letter-spacing:-1px;margin:4px 0 2px;}
+.kpi-sub{font-size:11px;color:var(--txt-m);}
+
+/* 카드 */
+.card{background:#fff;border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:16px;}
+.card-hdr{
+  padding:13px 20px;background:#f7faf8;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-ttl{font-size:13px;font-weight:700;color:var(--txt-h);}
+.card-body{padding:20px;}
+
+/* 테이블 */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{
+  padding:9px 14px;font-size:10px;font-weight:700;
+  color:var(--txt-m);text-transform:uppercase;letter-spacing:.8px;
+  text-align:left;border-bottom:1px solid var(--border);
+  background:#FAFBFD;white-space:nowrap;
+}
+.tbl td{padding:11px 14px;border-bottom:1px solid #F1F5F9;vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:#FAFBFF;}
+.tbl .cc{max-width:380px;line-height:1.5;}
+
+/* 배지 */
+.bdg{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700;white-space:nowrap;}
+.bdg-done{background:#d4f0e5;color:#007a4e;}
+.bdg-wip{background:#DBEAFE;color:#1D4ED8;}
+.bdg-next{background:#FEF3C7;color:#B45309;}
+.bdg-issue{background:#fce4eb;color:#b91a3d;}
+.bdg-urgent{background:#FFF1F2;color:#E11D48;border:1px solid #FECDD3;}
+.bdg-stage{background:#F1F5F9;color:#475569;}
+
+/* 우선순위 */
+.p1c{color:var(--p1);}
+.p2c{color:var(--p2);}
+.p3c{color:var(--p3);}
+.stars{letter-spacing:-2px;}
+
+/* 카테고리 태그 */
+.cat{display:inline-block;padding:2px 8px;background:var(--z-green-s);color:var(--z-green-d);border-radius:5px;font-size:10px;font-weight:700;white-space:nowrap;}
+
+/* 레이어 표시 */
+.layer-chip{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;
+}
+.layer-orig{background:#e6f7f1;color:#007a4e;}
+.layer-team{background:#EFF6FF;color:#1D4ED8;}
+.layer-dept{background:#FAF5FF;color:#7C3AED;}
+.layer-exec{background:#FFF7ED;color:#C2410C;}
+
+/* 필터바 */
+.fbar{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;
+  padding:12px 16px;background:#fff;
+  border:1px solid var(--border);border-radius:12px;margin-bottom:16px;
+}
+.fbar select,.fbar input[type=date]{
+  padding:6px 10px;border:1.5px solid var(--border);
+  border-radius:7px;font-family:inherit;font-size:12px;
+  color:var(--txt-h);background:#fff;outline:none;transition:border-color .2s;
+}
+.fbar select:focus,.fbar input[type=date]:focus{border-color:var(--accent);}
+.fbar-lbl{font-size:11px;font-weight:600;color:var(--txt-m);white-space:nowrap;}
+.fbar-input{padding:6px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:12px;color:var(--txt-h);background:#fff;outline:none;transition:border-color .2s;}
+.fbar-input:focus{border-color:var(--z-green);}
+
+/* 모달 */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:20px;width:660px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 32px 100px rgba(0,0,0,.25);}
+.modal-hdr{padding:22px 26px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1;}
+.modal-ttl{font-size:17px;font-weight:800;color:var(--txt-h);}
+.modal-x{width:32px;height:32px;border-radius:50%;border:none;background:var(--bg);cursor:pointer;font-size:16px;color:var(--txt-m);display:flex;align-items:center;justify-content:center;}
+.modal-x:hover{background:var(--border);}
+.modal-body{padding:26px;}
+.modal-ftr{padding:18px 26px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;position:sticky;bottom:0;background:#fff;}
+
+/* 폼 */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.fgrid.c3{grid-template-columns:1fr 1fr 1fr;}
+.ffull{grid-column:1/-1;}
+.fg2 label{display:block;font-size:10px;font-weight:700;color:var(--txt-s);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;}
+.fg2 input,.fg2 select,.fg2 textarea{
+  width:100%;padding:10px 14px;border:1.5px solid var(--border);
+  border-radius:9px;font-family:inherit;font-size:13px;
+  color:var(--txt-h);background:#fff;outline:none;transition:border-color .2s;
+}
+.fg2 input:focus,.fg2 select:focus,.fg2 textarea:focus{border-color:var(--z-green);box-shadow:0 0 0 3px rgba(0,156,100,.1);}
+.fg2 textarea{resize:vertical;min-height:90px;}
+
+/* 선택형 버튼 */
+.sel-row{display:flex;gap:8px;}
+.sel-btn{
+  flex:1;padding:9px;border:1.5px solid var(--border);border-radius:9px;
+  background:#fff;cursor:pointer;text-align:center;font-family:inherit;
+  font-size:11px;font-weight:700;transition:all .15s;color:var(--txt-m);
+}
+.sel-btn:hover{border-color:var(--accent);}
+.sel-btn.p1-on{border-color:var(--p1);background:#F8FAFC;color:var(--p1);}
+.sel-btn.p2-on{border-color:var(--p2);background:#e8f4fc;color:var(--p2);}
+.sel-btn.p3-on{border-color:var(--p3);background:#FEF2F2;color:var(--p3);}
+.sel-btn.s-done{border-color:var(--ok);background:#F0FDF4;color:var(--ok);}
+.sel-btn.s-wip{border-color:var(--z-green);background:var(--z-green-s);color:var(--z-green-d);}
+.sel-btn.s-next{border-color:var(--warn);background:#FFFBEB;color:var(--warn);}
+
+/* 토글 */
+.tog-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .2s;}
+.tog-wrap.on{border-color:var(--danger);background:#FEF2F2;}
+.tog-sw{width:34px;height:19px;background:var(--border);border-radius:10px;position:relative;transition:background .2s;flex-shrink:0;}
+.tog-sw::after{content:'';position:absolute;top:2px;left:2px;width:15px;height:15px;background:#fff;border-radius:50%;transition:transform .2s;}
+.tog-sw.on{background:var(--danger);}
+.tog-sw.on::after{transform:translateX(15px);}
+.tog-lbl{font-size:12px;font-weight:700;color:var(--txt-s);}
+
+/* 체크박스형 */
+.chk-wrap{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;cursor:pointer;transition:all .2s;}
+.chk-wrap.on{border-color:var(--z-green);background:var(--z-green-s);}
+.chk-box{width:18px;height:18px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;flex-shrink:0;background:#fff;transition:all .15s;}
+.chk-wrap.on .chk-box{background:var(--z-green);border-color:var(--z-green);}
+.chk-lbl{font-size:12px;font-weight:700;color:var(--txt-s);}
+
+/* 긴급 박스 */
+.urgent-box{background:#FFF1F2;border:1.5px solid #FECDD3;border-radius:9px;padding:14px;margin-top:10px;}
+.urgent-box-ttl{font-size:11px;font-weight:700;color:var(--danger);margin-bottom:8px;}
+
+/* ════════════════════════════════
+   전사 업무회의 뷰
+════════════════════════════════ */
+
+/* PC: 좌측 탭 + 우측 콘텐츠 */
+.meeting-wrap{
+  display:grid;
+  grid-template-columns:220px 1fr;
+  background:#fff;
+  border-radius:14px;
+  border:1px solid var(--border);
+  overflow:hidden;
+  min-height:calc(100vh - 220px);
+}
+
+/* 좌측 계열사 탭 */
+.co-tabs{
+  border-right:1px solid var(--border);
+  background:#f7faf8;
+  display:flex;
+  flex-direction:column;
+}
+.co-tab-hdr{
+  padding:14px 16px 10px;
+  border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.co-tab-hdr-ttl{
+  font-size:10px;font-weight:700;
+  color:var(--txt-m);letter-spacing:1.5px;text-transform:uppercase;
+}
+.co-tab{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:13px 16px;cursor:pointer;
+  border-left:3px solid transparent;
+  border-bottom:1px solid var(--border);
+  transition:all .15s;
+  position:relative;
+}
+.co-tab:last-child{border-bottom:none;}
+.co-tab:hover{ background:#eef5f1; }
+.co-tab.on{
+  border-left-color:var(--z-green);
+  background:#e8f5ee;
+}
+.co-tab.empty-co{ opacity:.45; }
+.co-tab-name{font-size:13px;font-weight:600;color:var(--txt-b);}
+.co-tab.on .co-tab-name{color:var(--z-green-d);font-weight:700;}
+.co-tab-cnt{
+  font-size:10px;font-weight:700;
+  background:var(--border);color:var(--txt-s);
+  padding:2px 7px;border-radius:8px;
+  flex-shrink:0;
+}
+.co-tab.on .co-tab-cnt{background:var(--z-green);color:#fff;}
+.co-tab.empty-co .co-tab-cnt{ display:none; }
+
+/* 우측 콘텐츠 */
+.co-content{
+  padding:24px;
+  overflow-y:auto;
+  background:#fff;
+}
+.co-content-hdr{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px;padding-bottom:14px;
+  border-bottom:2px solid var(--z-green-s);
+}
+.co-content-ttl{
+  font-size:20px;font-weight:800;
+  color:var(--txt-h);letter-spacing:-.5px;
+}
+.co-content-meta{
+  font-size:11px;color:var(--txt-m);margin-top:4px;
+  display:flex;gap:10px;flex-wrap:wrap;
+}
+.co-meta-chip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:10px;
+  font-size:10px;font-weight:700;
+}
+.co-meta-total{background:var(--z-green-s);color:var(--z-green-d);}
+.co-meta-issue{background:#fce4eb;color:var(--danger);}
+.co-meta-cat{background:#f1f5f9;color:var(--txt-s);}
+
+/* 카테고리 섹션 */
+.cat-section{
+  border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  margin-bottom:10px;
+}
+.cat-sec-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 16px;
+  background:#f7faf8;
+  cursor:pointer;
+  transition:background .15s;
+  user-select:none;
+}
+.cat-sec-hdr:hover{background:#eef5f1;}
+.cat-sec-ttl{
+  display:flex;align-items:center;gap:8px;
+  font-weight:700;font-size:13px;color:var(--txt-h);
+}
+.cat-sec-icon{
+  width:26px;height:26px;
+  background:var(--z-green-s);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;flex-shrink:0;
+}
+.cat-sec-meta{display:flex;align-items:center;gap:6px;}
+.cat-item-cnt{
+  font-size:10px;font-weight:700;
+  background:var(--z-green-s);color:var(--z-green-d);
+  padding:2px 8px;border-radius:8px;
+}
+.cat-issue-cnt{
+  font-size:10px;font-weight:700;
+  background:#fce4eb;color:var(--danger);
+  padding:2px 8px;border-radius:8px;
+}
+.cat-chevron{
+  font-size:11px;color:var(--txt-m);
+  transition:transform .2s;
+  margin-left:4px;
+}
+.cat-sec-hdr.collapsed .cat-chevron{transform:rotate(-90deg);}
+.cat-sec-body{border-top:1px solid var(--border);background:#fff;}
+
+/* 보고 아이템 */
+.rpt-item{
+  display:flex;gap:12px;padding:13px 16px;
+  border-bottom:1px solid #f0f5f2;
+  align-items:flex-start;
+  transition:background .1s;
+}
+.rpt-item:last-child{border-bottom:none;}
+.rpt-item:hover{background:#fafcfb;}
+.rpt-item.issue-item{
+  border-left:3px solid var(--danger);
+  background:#fffbfc;
+}
+.rpt-pri{flex-shrink:0;padding-top:3px;width:36px;text-align:center;}
+.rpt-pri-star{
+  display:inline-block;
+  font-size:11px;letter-spacing:-2px;
+}
+.rpt-body{flex:1;min-width:0;}
+.rpt-content{
+  font-size:13px;color:var(--txt-h);
+  line-height:1.65;margin-bottom:5px;
+}
+.rpt-issue-box{
+  font-size:11px;color:var(--danger);
+  margin-top:5px;padding:7px 11px;
+  background:#fef2f2;border-radius:7px;
+  border-left:2px solid var(--danger);
+  line-height:1.5;
+}
+.rpt-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;align-items:center;}
+.rpt-meta{
+  flex-shrink:0;text-align:right;
+  min-width:64px;
+}
+.rpt-author{font-size:11px;font-weight:600;color:var(--txt-s);}
+.rpt-date{
+  font-size:10px;color:var(--txt-m);
+  margin-top:2px;
+  font-family:monospace,monospace;
+}
+
+/* 빈 계열사 */
+.co-empty{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:60px 20px;
+  color:var(--txt-m);
+}
+.co-empty-ico{font-size:36px;margin-bottom:12px;opacity:.4;}
+.co-empty-msg{font-size:14px;font-weight:600;color:var(--txt-s);}
+.co-empty-sub{font-size:12px;margin-top:4px;}
+
+/* 팀장 확인 패널 */
+.review-item{
+  border:1px solid var(--border);border-radius:12px;
+  overflow:hidden;margin-bottom:12px;
+}
+.review-hdr{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding:14px 16px;background:#FAFBFD;
+  border-bottom:1px solid var(--border);
+}
+.review-orig{padding:14px 16px;background:#fff;}
+.review-orig-lbl{font-size:10px;font-weight:700;color:var(--ok);letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;}
+.review-edit{padding:14px 16px;background:#f0f7f4;border-top:1px solid #c4dfd6;}
+.review-edit-lbl{font-size:10px;font-weight:700;color:var(--z-green-d);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px;}
+.review-edit textarea{
+  width:100%;padding:10px 12px;border:1.5px solid #b8d4c8;
+  border-radius:8px;font-family:inherit;font-size:12px;
+  background:#fff;resize:vertical;min-height:70px;outline:none;
+}
+.review-edit textarea:focus{border-color:var(--z-green);}
+.review-actions{display:flex;gap:8px;padding:12px 16px;background:#F8FAFC;border-top:1px solid var(--border);}
+
+/* 긴급 배너 */
+.urgent-banner{
+  background:linear-gradient(135deg,#FFF1F2,#FFF5F5);
+  border:1.5px solid #FECDD3;border-radius:12px;
+  padding:16px 20px;margin-bottom:16px;
+  display:flex;align-items:center;gap:12px;
+}
+.urgent-banner-ico{font-size:24px;}
+.urgent-banner-txt .t1{font-size:13px;font-weight:700;color:var(--danger);}
+.urgent-banner-txt .t2{font-size:11px;color:#9F1239;margin-top:2px;}
+
+/* 이슈 현황 카드 */
+.issue-row{
+  display:flex;gap:12px;padding:14px;
+  border:1px solid var(--border);border-radius:10px;
+  background:#fff;margin-bottom:8px;
+  transition:box-shadow .15s;
+}
+.issue-row:hover{box-shadow:0 2px 12px rgba(0,0,0,.07);}
+.issue-row.p3{border-left:3px solid var(--danger);}
+.issue-row.p2{border-left:3px solid var(--accent);}
+
+
+/* 회의 요약 */
+.meeting-summary{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+  margin-bottom:16px;
+}
+.meeting-summary .sm-card{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:14px 16px;
+}
+.meeting-summary .sm-lbl{
+  font-size:10px;font-weight:700;color:var(--txt-m);text-transform:uppercase;letter-spacing:.8px;
+}
+.meeting-summary .sm-val{
+  font-family:monospace,monospace;font-size:26px;font-weight:700;color:var(--txt-h);margin-top:4px;
+}
+.meeting-summary .sm-sub{font-size:11px;color:var(--txt-m);margin-top:2px;}
+.meeting-focus{
+  background:#fff;border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;margin-bottom:16px;
+}
+.meeting-focus h3{
+  font-size:13px;font-weight:800;color:var(--txt-h);margin-bottom:10px;
+}
+.meeting-focus-list{display:flex;flex-direction:column;gap:8px;}
+.meeting-focus-item{
+  display:flex;gap:10px;align-items:flex-start;
+  padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fafcfb;
+}
+.meeting-focus-rank{
+  width:22px;height:22px;border-radius:50%;background:var(--z-green);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;
+}
+.meeting-focus-body{flex:1;min-width:0;}
+.meeting-focus-txt{font-size:12px;color:var(--txt-h);line-height:1.5;}
+.meeting-focus-meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px;}
+.meeting-top-badge{background:#FEF2F2;color:var(--danger);}
+
+body.presentation .hdr,
+body.presentation .sdb,
+body.presentation .mob-nav,
+body.presentation .sdb-overlay{display:none !important;}
+body.presentation .main{
+  margin-left:0 !important;
+  margin-top:0 !important;
+  height:auto !important;
+  min-height:100vh;
+  padding:18px 22px 28px !important;
+}
+body.presentation .pg-hdr{margin-bottom:14px;}
+body.presentation .meeting-wrap{min-height:auto;}
+body.presentation .co-content{padding:18px 20px;}
+body.presentation .pg-sub{font-size:13px;}
+body.presentation .co-content-ttl{font-size:24px;}
+body.presentation .rpt-content{font-size:14px;}
+body.presentation .cat-sec-hdr{padding:13px 16px;}
+
+@media (max-width: 768px) {
+  .meeting-summary{grid-template-columns:1fr 1fr;}
+}
+
+/* 빈 상태 */
+.empty{text-align:center;padding:48px 20px;color:var(--txt-m);}
+.empty-ico{font-size:40px;margin-bottom:12px;}
+.empty-msg{font-size:14px;font-weight:600;color:var(--txt-s);margin-bottom:4px;}
+.empty-sub{font-size:12px;}
+
+/* 토스트 */
+.toast-wrap{position:fixed;bottom:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 18px;border-radius:10px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.15);animation:ti .3s ease;max-width:320px;}
+.toast-ok{background:var(--ok);color:#fff;}
+.toast-err{background:var(--danger);color:#fff;}
+.toast-info{background:var(--z-green);color:#fff;}
+@keyframes ti{from{transform:translateX(40px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+
+/* 로딩 */
+.ld{display:none;position:fixed;inset:0;background:rgba(255,255,255,.7);z-index:400;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.ld.show{display:flex;}
+.sp{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--z-green);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ════════════════════════════════
+   모바일 반응형 (768px 이하)
+════════════════════════════════ */
+@media (max-width: 768px) {
+  :root { --header: 52px; --sidebar: 240px; }
+
+  /* 헤더 - 모바일 최적화 */
+  .hdr-logo { width: auto; border-right: none; padding: 0 12px; }
+  .hdr-logo-txt .t2 { display: none; }
+  .hdr-center { display: none; }
+  .hdr-right { padding-right: 12px; gap: 8px; }
+  .user-info .up { display: none; }
+  .user-pill { padding: 4px 10px 4px 6px; }
+
+  /* 사이드바 - 오버레이 드로어로 */
+  .sdb {
+    transform: translateX(-100%);
+    transition: transform .25s ease;
+    z-index: 300;
+    box-shadow: 4px 0 20px rgba(0,0,0,.15);
+  }
+  .sdb.open { transform: translateX(0); }
+
+  /* 오버레이 배경 */
+  .sdb-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.4);
+    z-index: 290;
+  }
+  .sdb-overlay.show { display: block; }
+
+  /* 메인 - 사이드바 없이 전체 너비 */
+  .main {
+    margin-left: 0;
+    padding: 16px 12px;
+    padding-bottom: calc(var(--mob-nav) + 16px);
+    height: calc(100vh - var(--header));
+    overflow-y: auto;
+  }
+
+  /* 하단 네비게이션 바 */
+  .mob-nav {
+    display: flex;
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: var(--mob-nav);
+    background: #fff;
+    border-top: 1px solid var(--border);
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+  }
+  .mob-nav-item {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 3px; cursor: pointer;
+    color: var(--txt-m); font-size: 10px; font-weight: 600;
+    transition: color .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-nav-item.on { color: var(--z-green-d); }
+  .mob-nav-item .mn-ico { font-size: 20px; }
+  .mob-nav-item .mn-lbl { font-size: 9px; }
+
+  /* 햄버거 버튼 (헤더) */
+  .mob-menu-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    background: rgba(255,255,255,.1); border: none; border-radius: 8px;
+    cursor: pointer; color: #fff; font-size: 18px;
+    margin-right: 4px;
+  }
+
+  /* 페이지 헤더 */
+  .pg-hdr { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 16px; }
+  .pg-title { font-size: 18px; }
+  .pg-hdr > div:last-child { width: 100%; display: flex; gap: 8px; }
+  .pg-hdr > div:last-child .btn { flex: 1; justify-content: center; font-size: 12px; }
+
+  /* KPI - 2열 */
+  .kpi-row { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi { padding: 14px 16px; }
+  .kpi-val { font-size: 26px; }
+
+  /* 필터바 - 세로 스택 */
+  .fbar { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
+  .fbar-lbl { display: none; }
+  .fbar select, .fbar input[type=date] { width: 100%; }
+  .fbar .btn { width: 100%; justify-content: center; }
+
+  /* 테이블 - 모바일용 숨김/압축 */
+  .tbl th:nth-child(1),
+  .tbl td:nth-child(1) { display: none; } /* 날짜 숨김 */
+  .tbl th:nth-child(7),
+  .tbl td:nth-child(7) { display: none; } /* 상향단계 숨김 */
+  .tbl th, .tbl td { padding: 8px 10px; font-size: 12px; }
+  .tbl .cc { max-width: 180px; font-size: 12px; }
+  .card { overflow-x: auto; }
+
+  /* 모달 - 하단 시트로 */
+  .overlay { align-items: flex-end; }
+  .modal {
+    width: 100%; max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+  }
+  .fgrid { grid-template-columns: 1fr; }
+  .fgrid.c3 { grid-template-columns: 1fr; }
+
+  /* 전사회의 - 세로 스택 (모바일) */
+  .meeting-wrap {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    border-radius: 10px;
+  }
+  .co-tabs {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .co-tabs::-webkit-scrollbar { display: none; }
+  .co-tab {
+    flex-direction: column; align-items: center; justify-content: center;
+    padding: 10px 14px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    border-top: none;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0; min-width: 72px;
+  }
+  .co-tab.on {
+    border-bottom-color: var(--z-green);
+    border-left: none;
+    background: var(--z-green-s);
+  }
+  .co-tab-name { font-size: 11px; }
+  .co-content { padding: 14px 12px; }
+  .co-tab-hdr { display: none; }
+  .co-content-ttl { font-size: 16px; }
+  .rpt-item { padding: 12px; }
+  .rpt-meta { min-width: 50px; }
+
+  /* 이슈 카드 */
+  .issue-row { flex-direction: column; gap: 8px; }
+  .issue-row > div:last-child { text-align: left; }
+
+  /* 검토 패널 */
+  .review-actions { flex-wrap: wrap; }
+  .review-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+
+  /* 사용자 관리 */
+  .settings-grid, [style*="grid-template-columns:1fr 1fr"] { 
+    grid-template-columns: 1fr !important; 
+  }
+}
+
+/* 태블릿 (769px ~ 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  :root { --sidebar: 200px; }
+  .mob-nav { display: none; }
+  .mob-menu-btn { display: none; }
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .main { padding: 20px 16px; }
+}
+
+/* PC (1025px 이상) */
+@media (min-width: 1025px) {
+  .mob-nav { display: none; }
+  .mob-menu-btn { display: none; }
+}
+
+
+/* 업무 항목 카드 */
+.m-item{
+  border:1.5px solid var(--border);border-radius:12px;
+  padding:16px;margin-bottom:12px;
+  background:#fff;position:relative;
+  transition:border-color .2s;
+}
+.m-item:focus-within{border-color:var(--z-green);}
+.m-item-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+.m-item-num{
+  font-size:11px;font-weight:700;color:var(--z-green-d);
+  background:var(--z-green-s);padding:2px 10px;border-radius:10px;
+}
+.m-item-del{
+  width:24px;height:24px;border-radius:50%;border:none;
+  background:#fee2e2;color:var(--danger);cursor:pointer;
+  font-size:14px;display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.m-item-del:hover{background:var(--danger);color:#fff;}
+.m-item .fg2{margin-bottom:10px;}
+.m-item .fg2:last-child{margin-bottom:0;}
+.m-item .sel-row{gap:6px;}
+.m-item .sel-btn{padding:7px 4px;font-size:10px;}
+.m-item .tog-wrap{padding:8px 12px;}
+.m-item textarea{min-height:70px;}
+
+
+/* ── 이미지 첨부 ── */
+.img-upload-area {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  text-align: center;
+  cursor: pointer;
+  transition: all .2s;
+  background: #fafbfd;
+  position: relative;
+}
+.img-upload-area:hover, .img-upload-area.drag-over {
+  border-color: var(--z-green);
+  background: var(--z-green-s);
+}
+.img-upload-area input[type=file] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.img-upload-label {
+  font-size: 12px; color: var(--txt-m);
+  pointer-events: none;
+}
+.img-upload-label span { color: var(--z-green-d); font-weight: 700; }
+.img-preview-wrap {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-top: 10px;
+}
+.img-thumb {
+  position: relative;
+  width: 72px; height: 72px;
+  border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.img-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover; display: block;
+  cursor: pointer;
+}
+.img-thumb-del {
+  position: absolute; top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  background: rgba(0,0,0,.6); color: #fff;
+  border: none; border-radius: 50%;
+  font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.img-thumb-del:hover { background: var(--danger); }
+
+/* 이미지 라이트박스 */
+.lightbox {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 500;
+  align-items: center; justify-content: center;
+  flex-direction: column; gap: 12px;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 92vw; max-height: 82vh;
+  border-radius: 10px;
+  object-fit: contain;
+}
+.lightbox-close {
+  position: absolute; top: 16px; right: 20px;
+  font-size: 28px; color: #fff;
+  cursor: pointer; background: none; border: none;
+  line-height: 1;
+}
+.lightbox-name {
+  font-size: 12px; color: rgba(255,255,255,.6);
+}
+
+/* 보고 목록 썸네일 */
+.rpt-imgs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-top: 6px;
+}
+.rpt-img-thumb {
+  width: 48px; height: 48px;
+  border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--border);
+  cursor: pointer; flex-shrink: 0;
+}
+.rpt-img-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.rpt-img-more {
+  width: 48px; height: 48px;
+  border-radius: 6px;
+  background: var(--bg); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--txt-m);
+  cursor: pointer; flex-shrink: 0;
+}
+
+
+/* ── 하위 보고 검토 - 사람별 그룹 ── */
+.person-group {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  margin-bottom:12px;
+  overflow:hidden;
+}
+.person-group-hdr {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  background:#f7faf8;
+  cursor:pointer;
+  user-select:none;
+  border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.person-group-hdr:hover { background:#eef5f1; }
+.person-group-hdr.collapsed { border-bottom:none; }
+.person-info { display:flex;align-items:center;gap:10px; }
+.person-av {
+  width:32px;height:32px;
+  background:var(--z-green);color:#fff;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.person-name { font-size:14px;font-weight:700;color:var(--txt-h); }
+.person-dept { font-size:11px;color:var(--txt-m);margin-top:1px; }
+.person-badges { display:flex;gap:6px;align-items:center; }
+.person-cnt { font-size:11px;font-weight:700;background:var(--z-green-s);color:var(--z-green-d);padding:2px 9px;border-radius:10px; }
+.person-issue-cnt { font-size:11px;font-weight:700;background:#fce4eb;color:var(--danger);padding:2px 9px;border-radius:10px; }
+.person-chevron { font-size:12px;color:var(--txt-m);transition:transform .2s; }
+.person-group-hdr.collapsed .person-chevron { transform:rotate(-90deg); }
+.person-group-body { }
+
+/* 댓글 영역 */
+.review-feedback {
+  padding:12px 16px;
+  background:#f0f7f4;
+  border-top:1px solid #c4dfd6;
+}
+.review-feedback-lbl {
+  font-size:10px;font-weight:700;color:var(--z-green-d);
+  letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;
+}
+.feedback-input-row {
+  display:flex;gap:8px;align-items:flex-end;
+}
+.feedback-input-row textarea {
+  flex:1;padding:8px 12px;
+  border:1.5px solid #b8d4c8;border-radius:8px;
+  font-family:inherit;font-size:12px;
+  resize:none;min-height:52px;outline:none;
+  background:#fff;
+  transition:border-color .2s;
+}
+.feedback-input-row textarea:focus { border-color:var(--z-green); }
+.feedback-list { margin-top:8px; }
+.feedback-item {
+  display:flex;gap:8px;padding:6px 0;
+  border-bottom:1px dashed var(--border);
+  font-size:12px;
+}
+.feedback-item:last-child { border-bottom:none; }
+.feedback-who { font-weight:700;color:var(--z-green-d);flex-shrink:0; }
+.feedback-txt { color:var(--txt-b);flex:1; }
+.feedback-date { font-size:10px;color:var(--txt-m);flex-shrink:0; }
+
+
+/* 검토 버튼 줄바꿈 방지 */
+.review-actions .btn { white-space:nowrap !important; }
+@media(max-width:600px){
+  .review-actions { gap:4px; padding:10px 12px; }
+  .review-actions .btn { font-size:11px; padding:5px 8px; }
+}
+
+/* ── 내 업무일지 모바일 카드형 ── */
+@media(max-width:768px){
+  .my-tbl-wrap { display:none !important; }
+  .my-card-list { display:block !important; }
+}
+@media(min-width:769px){
+  .my-tbl-wrap { display:block; }
+  .my-card-list { display:none; }
+}
+.my-card-list { display:none; }
+.my-card {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 16px;
+  margin-bottom:10px;
+}
+.my-card-hdr {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:8px;gap:8px;
+}
+.my-card-title {
+  font-size:14px;font-weight:700;color:var(--txt-h);flex:1;line-height:1.4;
+}
+.my-card-meta {
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.my-card-content {
+  font-size:13px;color:var(--txt-b);line-height:1.6;
+  margin-bottom:8px;
+}
+.my-card-next {
+  font-size:12px;color:var(--z-green-d);
+  background:var(--z-green-s);
+  padding:6px 10px;border-radius:6px;
+  margin-bottom:8px;
+}
+.my-card-ftr {
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;
+}
+
+
+/* ── 주간보고 재설계 ── */
+.wk-auto-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.wk-auto-card{background:#f7faf8;border:1px solid var(--border);border-radius:10px;padding:12px}
+.wk-auto-lbl{font-size:10px;font-weight:700;color:var(--txt-m);text-transform:uppercase;letter-spacing:.7px}
+.wk-auto-val{font-family:monospace,monospace;font-size:22px;font-weight:700;color:var(--txt-h);margin-top:3px}
+.wk-sec{margin-bottom:16px}
+.wk-sec-ttl{font-size:12px;font-weight:800;color:var(--txt-h);margin-bottom:8px}
+.wk-list{border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff}
+.wk-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-bottom:1px solid #eef3f0}
+.wk-item:last-child{border-bottom:none}
+.wk-item input[type=checkbox]{margin-top:3px;flex-shrink:0}
+.wk-item-main{flex:1;min-width:0}
+.wk-item-title{font-size:13px;font-weight:700;color:var(--txt-h)}
+.wk-item-desc{font-size:12px;color:var(--txt-b);margin-top:2px;line-height:1.5}
+.wk-item-sub{font-size:11px;color:var(--txt-m);margin-top:4px}
+.wk-chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.wk-help{font-size:11px;color:var(--txt-m);margin-top:4px}
+.wk-box{padding:12px 14px;border-radius:10px;border:1px solid var(--border);background:#fff}
+.wk-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:768px){.wk-auto-grid,.wk-detail-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.wk-auto-grid,.wk-detail-grid{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="mark"><span>ZD</span></div>
+      <h1>ZD<em>RS</em></h1>
+      <p>ZENIEL GROUP · DAILY REPORT SYSTEM</p>
+    </div>
+    <div class="login-divider"></div>
+    <div class="fg">
+      <label>아이디</label>
+      <input type="text" id="lid" placeholder="이메일" autocomplete="username">
+    </div>
+    <div class="fg">
+      <label>비밀번호</label>
+      <input type="password" id="lpw" placeholder="비밀번호" autocomplete="current-password">
+    </div>
+    <div class="login-err" id="lerr"></div>
+    <button class="btn-login" onclick="doLogin()">로 그 인</button>
+    <div class="login-hint">운영 시 Supabase Auth 이메일 · 비밀번호를 사용합니다<br></div>
+    <div style="margin-top:20px;text-align:center;font-size:9px;color:#ddd;letter-spacing:.5px">ⓟ 정민수 · 제니엘그룹 전략기획실 · 2026</div>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app">
+  <!-- 헤더 -->
+  <header class="hdr">
+    <button class="mob-menu-btn" onclick="toggleSdb()">☰</button>
+    <div class="hdr-logo">
+      <div class="hdr-logo-mark">Z</div>
+      <div class="hdr-logo-txt">
+        <div class="t1">ZDRS</div>
+        <div class="t2">업무보고 시스템</div>
+      </div>
+    </div>
+    <div class="hdr-center">
+      <span class="hdr-date" id="hdr-date"></span>
+      <span class="hdr-week" id="hdr-week"></span>
+    </div>
+    <div class="hdr-right">
+      <div class="user-pill">
+        <div class="user-av" id="uav">?</div>
+        <div class="user-info">
+          <div class="un" id="uname">-</div>
+          <div class="up" id="upos">-</div>
+        </div>
+      </div>
+      <button class="btn-lo" onclick="doLogout()">로그아웃</button>
+    </div>
+  </header>
+
+  <!-- 사이드바 -->
+  <div class="sdb-overlay" id="sdb-overlay" onclick="closeSdb()"></div>
+  <nav class="sdb" id="sdb">
+    <div style="padding:12px;">
+      <div class="sdb-me">
+        <div class="sdb-me-name" id="sb-name">-</div>
+        <div class="sdb-me-dept" id="sb-dept">-</div>
+        <div class="lvl-badge" id="sb-lvl">-</div>
+      </div>
+    </div>
+
+    <!-- 작성 (전 직급 공통) -->
+    <div class="sdb-section">
+      <div class="sdb-sec-lbl">업무 작성</div>
+      <div class="nav on" data-tab="my" onclick="go('my')">
+        <span class="ico">✏</span>내 업무일지
+      </div>
+      <div class="nav" data-tab="weekly" onclick="go('weekly')">
+        <span class="ico">📋</span>주간 업무보고
+      </div>
+    </div>
+
+    <!-- 검토 (팀장↑) -->
+    <div class="sdb-section" id="nav-review-sec" style="display:none">
+      <div class="sdb-sec-lbl">검토 · 상향</div>
+      <div class="nav" data-tab="review" onclick="go('review')" id="nav-review">
+        <span class="ico">◎</span>하위 보고 검토
+        <span class="bdg" id="bdg-review" style="display:none">0</span>
+      </div>
+      <div class="nav" data-tab="dept" onclick="go('dept')" id="nav-dept" style="display:none">
+        <span class="ico">≡</span>부서 집약
+      </div>
+    </div>
+
+    <!-- 조회 (전 직급) -->
+    <div class="sdb-section">
+      <div class="sdb-sec-lbl">현황</div>
+      <div class="nav" data-tab="issues" onclick="go('issues')">
+        <span class="ico">!</span>일일 이슈
+        <span class="bdg" id="bdg-issue" style="display:none">0</span>
+      </div>
+      <div class="nav" data-tab="issue-master" onclick="go('issue-master')">
+        <span class="ico">※</span>지속 이슈
+        <span class="bdg" id="bdg-issue-master" style="display:none">0</span>
+      </div>
+      <div class="nav" data-tab="meeting" onclick="go('meeting')" id="nav-meeting" style="display:none">
+        <span class="ico">◈</span>전사 회의
+      </div>
+    </div>
+
+    <!-- 시스템 관리 (전략기획실장↑) -->
+    <div class="sdb-section" id="nav-admin-sec" style="display:none">
+      <div class="sdb-sec-lbl">관리</div>
+      <div class="nav" data-tab="admin" onclick="go('admin')">
+        <span class="ico">◇</span>시스템 관리
+      </div>
+    </div>
+  <div style="padding:12px 16px 16px;border-top:1px solid var(--border)">
+      <div style="font-size:9px;color:var(--txt-m);text-align:center;letter-spacing:.3px">ⓟ 정민수 · 전략기획실 · 2026</div>
+    </div>
+  </nav>
+
+  <!-- 메인 -->
+  <main class="main">
+
+    <!-- ① 내 업무일지 -->
+    <div class="panel on" id="panel-my">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">내 업무일지</div>
+          <div class="pg-sub" id="my-sub">오늘의 업무를 기록합니다</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary" onclick="openModal()">＋ 업무 등록</button>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi blue"><div class="kpi-lbl">금일 등록</div><div class="kpi-val" id="k-tot">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi green"><div class="kpi-lbl">완료</div><div class="kpi-val" id="k-done">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi orange"><div class="kpi-lbl">미완료</div><div class="kpi-val" id="k-wip">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi red"><div class="kpi-lbl">이슈</div><div class="kpi-val" id="k-issue">0</div><div class="kpi-sub">건</div></div>
+      </div>
+
+      <div class="fbar" style="flex-wrap:wrap;gap:6px">
+        <span class="fbar-lbl">기간</span>
+        <input type="date" id="f-my-date-from" onchange="loadMy()" style="width:130px">
+        <span style="color:var(--txt-m);font-size:12px">~</span>
+        <input type="date" id="f-my-date-to" onchange="loadMy()" style="width:130px">
+        <span class="fbar-lbl">카테고리</span>
+        <select id="f-my-cat" onchange="loadMy()"><option value="">전체</option></select>
+        <span class="fbar-lbl">상태</span>
+        <select id="f-my-status" onchange="loadMy()">
+          <option value="">전체</option>
+          <option>완료</option><option>진행</option><option>이월</option>
+        </select>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-ttl">업무 목록</span>
+          <span style="font-size:11px;color:var(--txt-m)" id="my-cnt">0건</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="tbl">
+            <thead><tr>
+              <th style="width:76px">작성일</th>
+              <th style="width:100px">카테고리</th>
+              <th>업무 내용</th>
+              <th style="width:64px">우선순위</th>
+              <th style="width:60px">상태</th>
+              <th style="width:64px">이슈</th>
+              <th style="width:80px">보고 단계</th>
+              <th style="width:56px">수정</th>
+            </tr></thead>
+            <tbody id="my-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ② 주간 업무보고 -->
+    <div class="panel" id="panel-weekly">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">주간 업무보고</div>
+          <div class="pg-sub">이번 주 실행·이슈를 자동 집약하고 차주 계획과 판단 요청을 확정합니다</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="wk-sel" onchange="loadWeeklyDetail()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px"></select>
+          <button class="btn btn-primary" onclick="openWeeklyModal()">＋ 주간보고 정리</button>
+        </div>
+      </div>
+
+      <!-- 작성된 주간보고 목록 -->
+      <div id="weekly-list-wrap">
+        <div class="empty" id="weekly-empty" style="display:none">
+          <div class="empty-ico">📋</div>
+          <div class="empty-msg">이번 주 주간보고가 없습니다</div>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="openWeeklyModal()">주간보고 정리하기</button>
+        </div>
+        <div id="weekly-detail"></div>
+      </div>
+    </div>
+
+    <!-- ③ 하위 보고 검토 (팀장↑) -->
+    <div class="panel" id="panel-review">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">하위 보고 검토</div>
+          <div class="pg-sub" id="review-sub">하위 보고를 확인하고 상향 여부를 결정합니다</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="f-rv-date" class="fbar-input">
+          <button class="btn btn-ghost" onclick="loadReview()">조회</button>
+          <button class="btn btn-primary btn-sm" onclick="go('my')">내 업무 작성</button>
+        </div>
+      </div>
+      <!-- 내 오늘 업무 요약 (검토 화면에서도 확인 가능) -->
+      <div id="my-summary-in-review" style="display:none;margin-bottom:16px">
+        <div class="card" style="border-left:3px solid var(--z-green)">
+          <div class="card-hdr" style="cursor:pointer" onclick="go('my')">
+            <span class="card-ttl">📝 내 오늘 업무 요약</span>
+            <span style="font-size:11px;color:var(--z-green-d);font-weight:600">전체 보기 →</span>
+          </div>
+          <div class="card-body" style="padding:12px 20px" id="my-summary-content">
+            <span style="color:var(--txt-m);font-size:12px">등록된 업무가 없습니다</span>
+          </div>
+        </div>
+      </div>
+      <div id="review-body">
+        <div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">날짜를 선택하고 조회하세요</div></div>
+      </div>
+    </div>
+
+    <!-- ③ 이슈 현황 -->
+    <div class="panel" id="panel-issues">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">이슈 현황</div>
+          <div class="pg-sub">등록된 이슈 현황을 조회합니다</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select id="f-iss-co" class="fbar-input"><option value="">계열사 전체</option></select>
+          <select id="f-iss-cat" class="fbar-input"><option value="">카테고리 전체</option></select>
+          <button class="btn btn-ghost" onclick="loadIssues()">조회</button>
+        </div>
+      </div>
+      <div id="issues-body">
+        <div class="empty"><div class="empty-ico">⚠️</div><div class="empty-msg">조회 조건을 선택 후 조회하세요</div></div>
+      </div>
+    </div>
+
+    <!-- ④ 부서 집약 -->
+    <div class="panel" id="panel-dept">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">부서 집약</div>
+          <div class="pg-sub">상위 전달 확정된 보고를 부서 단위로 집약합니다</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="date" id="f-dp-date" class="fbar-input">
+          <button class="btn btn-ghost" onclick="loadDept()">조회</button>
+        </div>
+      </div>
+      <div id="dept-body">
+        <div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">날짜를 선택하고 조회하세요</div></div>
+      </div>
+    </div>
+
+    
+    <!-- ⑤ 지속 이슈 -->
+    <div class="panel" id="panel-issue-master">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">지속 이슈</div>
+          <div class="pg-sub">주간 이상 이어지는 핵심 이슈를 관리합니다</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="f-im-co" class="fbar-input"><option value="">계열사 전체</option></select>
+          <select id="f-im-status" class="fbar-input">
+            <option value="">상태 전체</option>
+            <option value="open">진행중</option>
+            <option value="monitoring">모니터링</option>
+            <option value="resolved">해결</option>
+            <option value="closed">종결</option>
+          </select>
+          <button class="btn btn-ghost" onclick="loadIssueMaster()">조회</button>
+          <button class="btn btn-primary" onclick="openIssueMasterModal()">＋ 지속 이슈 등록</button>
+        </div>
+      </div>
+      <div class="kpi-row">
+        <div class="kpi blue"><div class="kpi-lbl">진행중</div><div class="kpi-val" id="im-open">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi orange"><div class="kpi-lbl">모니터링</div><div class="kpi-val" id="im-monitor">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi green"><div class="kpi-lbl">해결</div><div class="kpi-val" id="im-resolved">0</div><div class="kpi-sub">건</div></div>
+        <div class="kpi red"><div class="kpi-lbl">의사결정 필요</div><div class="kpi-val" id="im-decision">0</div><div class="kpi-sub">건</div></div>
+      </div>
+      <div id="issue-master-body">
+        <div class="empty"><div class="empty-ico">📌</div><div class="empty-msg">조회 조건을 선택 후 조회하세요</div></div>
+      </div>
+    </div>
+
+<!-- ⑤ 전사 업무회의 뷰 -->
+    <div class="panel" id="panel-meeting">
+      <!-- 상단 헤더 -->
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">전사 업무회의</div>
+          <div class="pg-sub" id="meeting-sub">주차를 선택하면 계열사별 보고 현황이 표시됩니다</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <select id="f-mt-week" class="fbar-input" style="min-width:190px"></select>
+          <button class="btn btn-primary" onclick="loadMeeting()">조회</button>
+          <button class="btn btn-ghost" onclick="togglePresentationMode()" id="btn-presentation">발표모드</button>
+          <button class="btn btn-ghost" onclick="exportMeeting()">인쇄</button>
+        </div>
+      </div>
+
+      <div class="urgent-banner" id="urgent-banner" style="display:none">
+        <div class="urgent-banner-ico">🚨</div>
+        <div class="urgent-banner-txt">
+          <div class="t1">긴급 직상향 건이 있습니다</div>
+          <div class="t2">금주 긴급 보고 <span id="urgent-cnt">0</span>건</div>
+        </div>
+      </div>
+
+      <div class="meeting-summary" id="meeting-summary" style="display:none"></div>
+      <div class="meeting-focus" id="meeting-focus" style="display:none"></div>
+
+      <!-- 초기 빈 상태 -->
+      <div id="meeting-empty" style="background:#fff;border-radius:14px;border:1px solid var(--border)">
+        <div class="co-empty">
+          <div class="co-empty-ico">📅</div>
+          <div class="co-empty-msg">주차를 선택하고 조회하세요</div>
+          <div class="co-empty-sub">계열사별 주간 보고 현황이 표시됩니다</div>
+        </div>
+      </div>
+
+      <!-- 카테고리별 보고 섹션 -->
+      <div id="meeting-sections" style="display:none;margin-bottom:16px"></div>
+
+      <!-- 지속 이슈 섹션 -->
+      <div id="meeting-issues-section" style="display:none;margin-bottom:16px">
+        <div class="card">
+          <div class="card-hdr" style="background:#fef2f2;border-bottom:1px solid #fecdd3">
+            <span class="card-ttl" style="color:var(--danger)">📌 진행 중 이슈</span>
+            <span id="meeting-issues-cnt" style="font-size:11px;color:var(--danger);font-weight:700"></span>
+          </div>
+          <div id="meeting-issues-body" class="card-body" style="padding:0"></div>
+        </div>
+      </div>
+
+      <!-- 계열사별 레이아웃 (조회 후 표시) -->
+      <div class="meeting-wrap" id="meeting-main" style="display:none">
+        <div class="co-tabs">
+          <div class="co-tab-hdr">
+            <div class="co-tab-hdr-ttl">계열사</div>
+          </div>
+          <div id="co-tab-list"></div>
+        </div>
+        <div class="co-content" id="co-content"></div>
+      </div>
+    </div>
+
+    <!-- ⑥ 시스템 관리 -->
+    <div class="panel" id="panel-admin">
+      <div class="pg-hdr">
+        <div><div class="pg-title">시스템 관리</div><div class="pg-sub">사용자 계정 및 조직을 관리합니다</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">사용자 등록</span></div>
+          <div class="card-body">
+            <div class="fgrid">
+              <div class="fg2"><label>이름</label><input id="a-name" placeholder="홍길동"></div>
+              <div class="fg2"><label>계열사</label><select id="a-co" onchange="handleAdminCompanyChange()"></select></div>
+              <div class="fg2"><label>부서</label>
+                <select id="a-dept"><option value="">부서를 선택하세요</option></select></div>
+              <div class="fg2"><label>직위</label><input id="a-pos" placeholder="팀장"></div>
+              <div class="fg2"><label>권한 레벨</label>
+                <select id="a-lv">
+                  <option value="1">1 · 파트원/팀원</option>
+                  <option value="2">2 · 파트장/팀장</option>
+                  <option value="3">3 · 실장/사업부장</option>
+                  <option value="4">4 · 본부장/대표이사</option>
+                  <option value="5">5 · 전략기획실장(전체)</option>
+                </select>
+              </div>
+              <div class="fg2"><label>이메일</label><input id="a-lid" placeholder="사번 또는 이메일"></div>
+              <div class="fg2 ffull"><label>초기 비밀번호</label><input type="password" id="a-pw" placeholder="초기 비밀번호"></div>
+            </div>
+            <div style="background:#f0f5f3;border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-size:12px;color:var(--txt-m);margin-top:8px">사용자 등록은 Supabase Auth 또는 관리자 SQL로 처리됩니다</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr"><span class="card-ttl">등록 사용자</span><button class="btn btn-ghost btn-sm" onclick="loadUsers()">새로고침</button></div>
+          <div style="overflow-x:auto;max-height:480px;overflow-y:auto">
+            <table class="tbl">
+              <thead><tr><th>이름</th><th>계열사</th><th>직위</th><th>레벨</th><th>상태</th></tr></thead>
+              <tbody id="user-body"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-m)">로딩 중...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- 주간보고 작성 모달 -->
+  <div class="overlay" id="weekly-modal-bg">
+    <div class="modal" style="max-width:960px;width:96vw;max-height:92vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <div>
+          <div class="modal-ttl">📋 주간 업무보고 정리</div>
+          <div style="font-size:11px;color:var(--txt-m);margin-top:2px">실행내역과 이슈를 자동 집약한 뒤, 차주 계획과 판단 요청을 확정합니다</div>
+        </div>
+        <button class="modal-x" onclick="closeWeeklyModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;overflow-y:auto;flex:1;min-height:0">
+        <div class="fg2" style="margin-bottom:12px">
+          <label>대상 주차</label>
+          <select id="wk-modal-week" onchange="loadWeeklyDailyList()" style="width:100%"></select>
+        </div>
+
+        <div class="wk-auto-grid" id="wk-auto-summary">
+          <div class="wk-auto-card"><div class="wk-auto-lbl">실행 후보</div><div class="wk-auto-val" id="wk-cand-perf">0</div></div>
+          <div class="wk-auto-card"><div class="wk-auto-lbl">이슈 후보</div><div class="wk-auto-val" id="wk-cand-issue">0</div></div>
+          <div class="wk-auto-card"><div class="wk-auto-lbl">미완료</div><div class="wk-auto-val" id="wk-cand-open">0</div></div>
+          <div class="wk-auto-card"><div class="wk-auto-lbl">판단 필요</div><div class="wk-auto-val" id="wk-cand-decision">0</div></div>
+        </div>
+
+        <div class="wk-sec">
+          <div class="wk-sec-ttl">① 금주 실행내역 후보</div>
+          <div class="wk-help">이번 주 실행한 내용 중 전사회의/법인 보고에 담을 항목만 체크합니다. 이슈와 무관한 실행내역도 포함할 수 있습니다.</div>
+          <div class="wk-list" id="wk-performance-list">
+            <div style="padding:18px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 자동 집약 후보가 표시됩니다</div>
+          </div>
+        </div>
+
+        <div class="wk-sec">
+          <div class="wk-sec-ttl">② 금주 이슈 후보</div>
+          <div class="wk-help">이번 주 새로 발생했거나 계속 추적 중인 이슈를 별도로 선택합니다.</div>
+          <div class="wk-list" id="wk-issue-list">
+            <div style="padding:18px;text-align:center;color:var(--txt-m);font-size:13px">지속 이슈 및 금주 이슈가 표시됩니다</div>
+          </div>
+        </div>
+
+        <div class="wk-detail-grid">
+          <div class="fg2">
+            <label>금주 종합 요약</label>
+            <textarea id="wk-summary" placeholder="법인/조직 관점에서 이번 주 핵심 실행과 상태를 간단히 정리하세요" style="min-height:110px"></textarea>
+          </div>
+          <div class="fg2">
+            <label>차주 계획 <span style="color:#e53e3e;font-size:11px">*</span></label>
+            <textarea id="wk-next-plan" placeholder="다음 주 실행할 계획을 적습니다. 이번 주 이슈와 직접 연결되지 않아도 됩니다." style="min-height:110px"></textarea>
+          </div>
+          <div class="fg2" style="grid-column:1/-1">
+            <label>의사결정 / 상위 요청</label>
+            <textarea id="wk-decision" placeholder="회장님 또는 상위 의사결정이 필요한 항목을 적습니다" style="min-height:86px"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-ftr" style="flex-shrink:0">
+        <button class="btn btn-ghost" onclick="closeWeeklyModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveWeeklyReport()">💾 주간보고 저장</button>
+      </div>
+    </div>
+  </div>
+
+<!-- 업무 등록/수정 모달 -->
+<div class="overlay" id="rpt-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-ttl" id="modal-ttl">업무 등록</div>
+        <div style="font-size:11px;color:var(--txt-m);margin-top:2px">항목 추가로 여러 업무를 한 번에 등록할 수 있습니다</div>
+      </div>
+      <button class="modal-x" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="m-id">
+      <input type="hidden" id="m-edit-mode" value="0">
+
+
+
+      <!-- 날짜 + 상위전달 (공통) -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <div class="fg2" style="flex:1;min-width:140px;margin:0">
+          <label>작성일</label>
+          <input type="date" id="m-date">
+        </div>
+        <div id="m-upper-g" style="display:none;flex:1;min-width:200px;">
+          <div class="fg2" style="margin:0"><label>상위 전달</label>
+            <div class="chk-wrap" id="m-upper" onclick="togUpper()">
+              <div class="chk-box" id="m-upper-box"></div>
+              <span class="chk-lbl" style="font-size:11px">주간 보고 포함</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 업무 항목 목록 (동적) -->
+      <div id="m-items-wrap"></div>
+
+      <!-- 항목 추가 버튼 (수정 모드 제외) -->
+      <div id="m-add-btn-wrap">
+        <button class="btn btn-ghost" style="width:100%;justify-content:center;border-style:dashed;color:var(--z-green-d);border-color:var(--z-green);" onclick="addItem()">
+          ＋ 업무 항목 추가
+        </button>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn btn-ghost" id="btn-save-next" onclick="saveReport(true)" style="display:none">저장 후 계속</button>
+      <button class="btn btn-primary" onclick="saveReport(false)">저장</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 지속 이슈 등록 모달 -->
+<div class="overlay" id="issue-master-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-ttl">지속 이슈 등록</div>
+        <div style="font-size:11px;color:var(--txt-m);margin-top:2px">일일 보고에서 승격하거나 직접 등록할 수 있습니다</div>
+      </div>
+      <button class="modal-x" onclick="closeIssueMasterModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="im-source-report-id">
+      <div class="fgrid c3">
+        <div class="fg2"><label>계열사</label><select id="im-company"></select></div>
+        <div class="fg2"><label>카테고리</label><select id="im-category"></select></div>
+        <div class="fg2"><label>상태</label>
+          <select id="im-status">
+            <option value="open">진행중</option>
+            <option value="monitoring">모니터링</option>
+            <option value="resolved">해결</option>
+            <option value="closed">종결</option>
+          </select>
+        </div>
+        <div class="fg2 ffull"><label>이슈명</label><input id="im-title" placeholder="예: 홈플러스 안성물류센터 계약종료 대응"></div>
+        <div class="fg2"><label>우선순위</label>
+          <select id="im-priority">
+            <option value="1">★ 일반</option>
+            <option value="2">★★ 주요</option>
+            <option value="3">★★★ 긴급</option>
+          </select>
+        </div>
+        <div class="fg2"><label>고객사 영향</label>
+          <select id="im-customer">
+            <option value="false">없음</option>
+            <option value="true">있음</option>
+          </select>
+        </div>
+        <div class="fg2"><label>의사결정 필요</label>
+          <select id="im-decision">
+            <option value="false">없음</option>
+            <option value="true">있음</option>
+          </select>
+        </div>
+        <div class="fg2"><label>시작일</label><input type="date" id="im-start-date"></div>
+        <div class="fg2 ffull"><label>현재 요약</label><textarea id="im-summary" placeholder="현재 상황을 요약하세요"></textarea></div>
+        <div class="fg2 ffull"><label>영향/리스크</label><textarea id="im-impact" placeholder="고객사 영향, 재무 영향, 운영 리스크 등"></textarea></div>
+        <div class="fg2 ffull"><label>차주 계획</label><textarea id="im-action" placeholder="다음 단계 조치 계획"></textarea></div>
+        <div class="fg2"><label>목표 해결일</label><input type="date" id="im-target-date"></div>
+        <div class="fg2"><label>전사회의 포함</label>
+          <div class="chk-wrap" id="im-meeting-wrap" onclick="togIssueMeeting()">
+            <div class="chk-box" id="im-meeting-box"></div>
+            <span class="chk-lbl" style="font-size:11px">전사 업무회의에 포함</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeIssueMasterModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveIssueMaster()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 주차 업데이트 모달 -->
+<div class="overlay" id="weekly-update-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-ttl">주차 현황 업데이트</div>
+        <div style="font-size:11px;color:var(--txt-m);margin-top:2px" id="wu-issue-title">-</div>
+      </div>
+      <button class="modal-x" onclick="closeWeeklyUpdateModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="wu-issue-id">
+      <div class="fgrid">
+        <div class="fg2"><label>상태 업데이트</label>
+          <select id="wu-status">
+            <option value="open">진행중</option>
+            <option value="monitoring">모니터링</option>
+            <option value="resolved">해결</option>
+            <option value="closed">종결</option>
+          </select>
+        </div>
+        <div class="fg2 ffull"><label>이번 주 진행 현황 *</label>
+          <textarea id="wu-summary" placeholder="이번 주 진행된 내용, 현재 상태를 기재하세요"></textarea>
+        </div>
+        <div class="fg2 ffull"><label>다음 주 조치 계획</label>
+          <textarea id="wu-next-action" placeholder="다음 주 예정된 조치 계획"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeWeeklyUpdateModal()">취소</button>
+      <button class="btn btn-primary" onclick="saveWeeklyUpdate()">업데이트 저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 모바일 하단 네비 -->
+<nav class="mob-nav" id="mob-nav" style="display:none">
+  <div class="mob-nav-item on" data-mtab="my" onclick="mobGo('my')">
+    <span class="mn-ico">📝</span><span class="mn-lbl">업무</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="review" onclick="mobGo('review')" id="mn-review" style="display:none">
+    <span class="mn-ico">✅</span><span class="mn-lbl">검토</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="issues" onclick="mobGo('issues')">
+    <span class="mn-ico">⚠️</span><span class="mn-lbl">일일</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="issue-master" onclick="mobGo('issue-master')">
+    <span class="mn-ico">📌</span><span class="mn-lbl">지속이슈</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="dept" onclick="mobGo('dept')" id="mn-dept" style="display:none">
+    <span class="mn-ico">📋</span><span class="mn-lbl">집약</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="weekly" onclick="mobGo('weekly')">
+    <div class="mn-ico">📋</div><div class="mn-lbl">주간보고</div>
+  </div>
+  <div class="mob-nav-item" data-mtab="meeting" onclick="mobGo('meeting')" id="mn-meeting" style="display:none">
+    <span class="mn-ico">🏛️</span><span class="mn-lbl">회의</span>
+  </div>
+</nav>
+
+<!-- 이미지 라이트박스 -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-name" id="lightbox-name"></div>
+</div>
+
+<!-- 토스트 / 로딩 -->
+<div class="toast-wrap" id="toasts"></div>
+<div class="ld" id="ld"><div class="sp"></div><div style="font-size:13px;color:var(--txt-s)">처리 중...</div></div>
+
+<script>
+// ══════════════════════════════════════════════
+// Supabase 설정 (실제 키 교체 필요)
+// ══════════════════════════════════════════════
+const SB_URL = 'https://ognGcuiidtpsxsccwgav.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9nbmdjdWlpZHRwc3hzY2N3Z2F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NjEwNjUsImV4cCI6MjA5MTMzNzA2NX0.xAhCwZTITRBvuuL3OifuVq66kuOf8AykgP_9sC9SLMc';
+const USE_DEMO = (SB_URL === 'YOUR_SUPABASE_URL' || SB_KEY === 'YOUR_SUPABASE_ANON_KEY');
+let sb = null;
+try {
+  if(!USE_DEMO && typeof supabase !== 'undefined') sb = supabase.createClient(SB_URL, SB_KEY);
+} catch(e){ sb = null; }
+
+// ══════════════════════════════════════════════
+// 전역 상태
+// ══════════════════════════════════════════════
+let CU = null; // currentUser
+let CATS = [];
+let COS  = [];
+let ORGS = [];
+let mPri = 1, mSt = '진행', mIssue = false, mUpper = false, mUrgent = false;
+let meetingData = {}; // { company_code: [ reports ] }
+let activeCo = null;
+let reviewFeedbackMap = {};
+
+// 데모 데이터
+var DEMO_USERS = {
+  'jms':    { id:1,  name:'정민수', company_code:'ZENIEL', dept_code:'STRAT_HQ', org_code:'STRAT_HQ',   position_name:'전략기획실장', position_level:5, login_id:'jms' },
+  'byr':    { id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',  position_level:2, login_id:'byr' },
+  'jjw':    { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',  position_level:1, login_id:'jjw' },
+  'jyj':    { id:4,  name:'진예주', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'사원',  position_level:1, login_id:'jyj' },
+  'kjy':    { id:5,  name:'강정연', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'팀장',  position_level:2, login_id:'kjy' },
+  'cdh':    { id:6,  name:'최도훈', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'대리',  position_level:1, login_id:'cdh' },
+  'gsh':    { id:7,  name:'구소희', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'주임',  position_level:1, login_id:'gsh' },
+  'gwy':    { id:8,  name:'고운영', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'사원',  position_level:1, login_id:'gwy' },
+  'khj':    { id:9,  name:'권현지', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'사원',  position_level:1, login_id:'khj' },
+  'ljs':    { id:10, name:'임재석', company_code:'ZENIEL', dept_code:'HR_ADMIN',   org_code:'HR_ADMIN',    position_name:'',      position_level:1, login_id:'ljs' },
+  'cdh2':   { id:11, name:'최다현', company_code:'ZENIEL', dept_code:'EDU_PLAN',   org_code:'EDU_PLAN',    position_name:'과장',  position_level:2, login_id:'cdh2' },
+  'admin':  { id:1,  name:'정민수', company_code:'ZENIEL', dept_code:'STRAT_HQ',   org_code:'STRAT_HQ',   position_name:'전략기획실장', position_level:5, login_id:'admin' },
+  'manager':{ id:2,  name:'박용락', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'과장',  position_level:2, login_id:'manager' },
+  'staff':  { id:3,  name:'전진우', company_code:'ZENIEL', dept_code:'STRAT_PLAN', org_code:'STRAT_PLAN',  position_name:'대리',  position_level:1, login_id:'staff' }
+};
+
+// 데모 모드: 빈 데이터 (실제 Supabase 연결 후 사용)
+function DEMO_REPORTS(){ return []; }
+
+// ══════════════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', async function() {
+  document.getElementById('app').style.display='none';
+  setHeaderInfo();
+  document.getElementById('m-date').value = today();
+  document.getElementById('f-my-date').value = today();
+  document.getElementById('f-rv-date').value = today();
+  document.getElementById('f-dp-date').value = today();
+
+  if(sb){
+    // onAuthStateChange: 세션 만료/탭 전환/로그아웃 자동 감지
+    sb.auth.onAuthStateChange(function(event, session) {
+      if(event === 'SIGNED_OUT' || !session){
+        if(CU){ CU = null; resetUI(); }
+        return;
+      }
+      if(event === 'SIGNED_IN' && session && session.user && !CU){
+        loadCurrentUserProfile(session.user.id);
+      }
+    });
+
+    // 초기 세션 복원
+    sb.auth.getUser().then(function(res) {
+      if(res && res.data && res.data.user && !CU){
+        loadCurrentUserProfile(res.data.user.id);
+      }
+    }).catch(function(e){ console.error('세션 복원 실패', e); });
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if(e.key==='Enter' && document.getElementById('app').style.display==='none') doLogin();
+  });
+});
+
+function resetUI(){
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-wrap').style.display='';
+  document.getElementById('lid').value='';
+  document.getElementById('lpw').value='';
+  document.getElementById('lerr').textContent='';
+  var mn = document.getElementById('mob-nav'); if(mn) mn.style.display='none';
+  var _arr_ = ['nav-review-sec','nav-admin-sec']; _arr_.forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  var _arr_ = ['nav-dept','nav-meeting']; _arr_.forEach(function(id){
+    var el=document.getElementById(id); if(el) el.style.display='none';
+  });
+  document.querySelectorAll('.nav').forEach(function(n){ n.classList.remove('on'); });
+  var el1=document.querySelector('[data-tab="my"]'); if(el1) el1.classList.add('on');
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+  var el2=document.getElementById('panel-my'); if(el2) el2.classList.add('on');
+}
+
+function today(){ return new Date().toISOString().split('T')[0]; }
+
+function setHeaderInfo(){
+  var d = new Date();
+  var days=['일','월','화','수','목','금','토'];
+  document.getElementById('hdr-date').textContent = d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' ('+days[d.getDay()]+')';
+  var _w=getWeek(d);
+  var _wd=d.getDay(); var _diff=d.getDate()-(_wd===0?6:_wd-1);
+  var _mon=new Date(d); _mon.setDate(_diff);
+  var _sun=new Date(_mon); _sun.setDate(_mon.getDate()+6);
+  var _wlbl=d.getFullYear()+'년 '+_w+'주 ('+((_mon.getMonth()+1))+'/'+_mon.getDate()+'~'+((_sun.getMonth()+1))+'/'+_sun.getDate()+')';
+  document.getElementById('hdr-week').textContent = _wlbl;
+}
+function pad(n){return String(n).padStart(2,'0');}
+function getWeek(d){
+  var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));
+  var y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  return Math.ceil((((dt-y)/86400000)+1)/7);
+}
+
+function getWeekInfo(dateStr){
+  var d = new Date(dateStr);
+  return {
+    week_number: getWeek(d),
+    year_num: d.getFullYear()
+  };
+}
+
+// ══════════════════════════════════════════════
+// 로그인
+// ══════════════════════════════════════════════
+async function loadCurrentUserProfile(authUserId){
+  try{
+    var { data, error } = await sb.from('users_profile').select('*').eq('user_id', authUserId).eq('is_active', true).single();
+    if(error || !data){
+      document.getElementById('lerr').textContent='로그인은 성공했지만 사용자 프로필이 없습니다.';
+      return false;
+    }
+    CU = data;
+    enterApp();
+    return true;
+  }catch(e){
+    document.getElementById('lerr').textContent='사용자 프로필 조회 중 오류가 발생했습니다.';
+    return false;
+  }
+}
+
+async function doLogin(){
+  var id=document.getElementById('lid').value.trim();
+  var pw=document.getElementById('lpw').value;
+  var err=document.getElementById('lerr');
+  if(!id||!pw){err.textContent='이메일과 비밀번호를 입력하세요.';return;}
+  err.textContent=''; showLd(true);
+
+  if(!sb){
+    var u=DEMO_USERS[id];
+    if(u&&pw==='1234'){ CU=u; localStorage.setItem('zdrs2_user',JSON.stringify(CU)); enterApp(); }
+    else err.textContent='로그인 정보가 올바르지 않습니다.';
+    showLd(false); return;
+  }
+
+  try{
+    var { data, error } = await sb.auth.signInWithPassword({ email:id, password:pw });
+    if(error || !data || !data.user){
+      err.textContent='로그인 정보가 올바르지 않습니다.';
+      showLd(false);
+      return;
+    }
+    var ok = await loadCurrentUserProfile(data.user.id);
+    if(ok){
+      document.getElementById('lid').value='';
+      document.getElementById('lpw').value='';
+    }
+  }catch(e){
+    err.textContent='서버 연결 오류';
+  }
+  showLd(false);
+}
+async function doLogout(){
+  CU = null;
+  if(sb){ try{ await sb.auth.signOut(); }catch(e){ console.error(e); } }
+  resetUI();
+}
+
+// ══════════════════════════════════════════════
+// 앱 진입
+// ══════════════════════════════════════════════
+async function enterApp(){
+  document.getElementById('login-wrap').style.display='none';
+  document.getElementById('app').style.display='block';
+  var u=CU;
+  document.getElementById('uav').textContent=u.name[0];
+  document.getElementById('uname').textContent=u.name;
+  document.getElementById('upos').textContent=u.position_name||'-';
+  document.getElementById('sb-name').textContent=u.name;
+  document.getElementById('sb-dept').textContent=getDeptName(u.org_code || u.dept_code);
+  document.getElementById('sb-lvl').textContent=u.position_name||getLvlLabel(u.position_level);
+  document.getElementById('my-sub').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' 기준';
+
+  var lv=u.position_level||1;
+  if(lv>=2){
+    document.getElementById('nav-review-sec').style.display='block';
+    document.getElementById('m-upper-g').style.display='block';
+  }
+  if(lv>=3){
+    document.getElementById('nav-dept').style.display='flex'; // 관리자 섹션 내 부서집약
+  }
+  if(lv>=1){
+    document.getElementById('nav-meeting').style.display='flex';
+  }
+  if(lv>=5){
+    document.getElementById('nav-admin-sec').style.display='block';
+  }
+  updateMobNav(lv);
+  document.getElementById('mob-nav').style.display='';
+  // 모바일 하단 네비 초기 활성 설정
+  document.querySelectorAll('.mob-nav-item').forEach(i=>i.classList.toggle('on',i.dataset.mtab==='my'));
+
+  await initMeta();
+  // 날짜 기본값 재설정
+  var t = today();
+  // 기간 조회 기본값: 오늘
+  var todayVal = today();
+  var fromEl = document.getElementById('f-my-date-from');
+  var toEl   = document.getElementById('f-my-date-to');
+  if(fromEl) fromEl.value = todayVal;
+  if(toEl)   toEl.value   = todayVal;
+
+  ;['f-rv-date','f-dp-date'].forEach(function(id){
+    var el=document.getElementById(id); if(el&&!el.value) el.value=t;
+  });
+
+  // ── 직급별 기본 화면 분기 ──
+  // lv 1: 내 업무일지
+  // lv 2~3: 검토 대기함 (하위 보고 먼저)
+  // lv 4: 부서 집약
+  // lv 5: 전사 회의
+  if(lv >= 5){
+    await loadMy(); // 데이터 백그라운드 로드
+    go('meeting');
+    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='meeting'); });
+  } else if(lv >= 4){
+    await loadMy();
+    go('dept');
+    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='dept'); });
+  } else if(lv >= 2){
+    await loadMy(); // 내 일지도 로드
+    go('review');
+    loadReview();
+    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='review'); });
+  } else {
+    await loadMy();
+  }
+  // 기한 도래 업무 팝업 체크 (로그인 후 1.5초 뒤)
+  setTimeout(function(){ checkDueTasks(); }, 1500);
+}
+
+function getLvlLabel(lv){
+  var _lvls=['','파트원/팀원','과장/팀장','실장/사업부장','본부장/대표이사','전략기획실장']; return _lvls[lv]||'-';
+}
+
+function getDeptName(code){
+  if(!code) return '-';
+  var org = ORGS.find(function(o){ return o.org_code===code; });
+  if(org) return org.org_name;
+  var map = {
+    'STRAT_HQ':   '전략기획실',
+    'STRAT_PLAN': '전략기획팀',
+    'HR_ADMIN':   '인사총무팀',
+    'EDU_PLAN':   '교육기획파트',
+  };
+  return map[code] || code || '-';
+}
+
+async function initMeta(){
+  if(sb){
+    try{
+      var orgs = null; try{ var _t = await sb.from('organizations').select('org_code,org_name,parent_org_code,company_code,org_level,is_active').eq('is_active',true).order('company_code').order('org_level').order('org_name'); orgs = _t ? _t.data : null; }catch(_e){}
+      ORGS = orgs || [];
+    }catch(e){
+      ORGS = [];
+      console.error('organizations load failed', e);
+    }
+  } else {
+    ORGS = [];
+  }
+  CATS=[
+    {category_code:'OPS',category_name:'영업/현장운영',icon:'📊'},
+    {category_code:'BIZ_NEW',category_name:'신규 사업기회',icon:'🆕'},
+    {category_code:'BIZ_RE',category_name:'재계약 관리',icon:'🔄'},
+    {category_code:'LABOR',category_name:'노무 이슈',icon:'⚖️'},
+    {category_code:'SAFETY',category_name:'안전보건',icon:'🦺'},
+    {category_code:'RISK',category_name:'리스크 관리',icon:'⚠️'},
+    {category_code:'STRAT',category_name:'전략/기획',icon:'🎯'},
+    {category_code:'HR_EDU',category_name:'인사/총무/교육',icon:'👥'},
+    {category_code:'IT_DX',category_name:'IT/DX/시스템',icon:'💻'},
+    {category_code:'ADMIN',category_name:'일반 행정',icon:'📋'},
+  ];
+  COS=[
+    {company_code:'ZENIEL',company_name:'제니엘(본사)'},
+    {company_code:'ZENIEL_SYS',company_name:'제니엘시스템'},
+    {company_code:'ZENIEL_HUMAN',company_name:'제니엘휴먼'},
+    {company_code:'ZENIEL_INNO',company_name:'제니엘이노베이션'},
+    {company_code:'ZENIEL_MED',company_name:'제니엘메디컬'},
+    {company_code:'ZENIEL_PLUS',company_name:'제니엘플러스'},
+    {company_code:'INNOPARK',company_name:'이노파크'},
+  ];
+
+  // 카테고리 셀렉트 채우기
+  ['m-cat','f-my-cat','f-iss-cat'].forEach(id=>{
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id!=='m-cat';
+    el.innerHTML=(hasAll?'<option value="">전체</option>':'')+CATS.map(c=>`<option value="${c.category_code}">${c.icon} ${c.category_name}</option>`).join('');
+  });
+
+  // 계열사 셀렉트
+  ['f-iss-co','a-co'].forEach(id=>{
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id!=='a-co';
+    el.innerHTML=(hasAll?'<option value="">전체</option>':'')+COS.map(c=>`<option value="${c.company_code}">${c.company_name}</option>`).join('');
+  });
+
+  populateAdminOrgOptions(document.getElementById('a-co') ? document.getElementById('a-co').value : '');
+
+  // 지속 이슈용 셀렉트
+  ['f-im-co','im-company'].forEach(id=>{
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id==='f-im-co';
+    el.innerHTML=(hasAll?'<option value="">전체</option>':'')+COS.map(c=>`<option value="${c.company_code}">${c.company_name}</option>`).join('');
+  });
+  ['im-category'].forEach(id=>{
+    var el=document.getElementById(id);if(!el)return;
+    el.innerHTML=CATS.map(c=>`<option value="${c.category_code}">${c.icon} ${c.category_name}</option>`).join('');
+  });
+  // 주차 옵션
+  var wsel=document.getElementById('f-mt-week');
+  if(wsel){
+    var now=new Date();
+    // 해당 주차의 월요일 날짜 계산
+    function getMondayOfWeek(d){
+      var day=d.getDay(); // 0=일,1=월...
+      var diff=d.getDate()-(day===0?6:day-1); // 월요일로
+      var mon=new Date(d);
+      mon.setDate(diff);
+      return mon;
+    }
+    function fmtMD(d){ return (d.getMonth()+1)+'/'+d.getDate(); }
+    wsel.innerHTML=Array.from({length:12},function(_,i){
+      var d=new Date(now); d.setDate(d.getDate()-i*7);
+      var w=getWeek(d);
+      var mon=getMondayOfWeek(d);
+      var sun=new Date(mon); sun.setDate(mon.getDate()+6);
+      var label=d.getFullYear()+'년 '+w+'주 ('+fmtMD(mon)+'~'+fmtMD(sun)+')';
+      return '<option value="'+d.getFullYear()+'-'+w+'">'+label+'</option>';
+    }).join('');
+  }
+}
+
+function handleAdminCompanyChange(){
+  var coEl = document.getElementById('a-co');
+  populateAdminOrgOptions(coEl ? coEl.value : '');
+}
+
+function populateAdminOrgOptions(companyCode){
+  var el = document.getElementById('a-dept');
+  if(!el) return;
+  var list = (ORGS || []).filter(function(o){
+    return (!companyCode || o.company_code===companyCode);
+  });
+  list.sort(function(a,b){
+    if((a.org_level||0)!==(b.org_level||0)) return (a.org_level||0)-(b.org_level||0);
+    return String(a.org_name||'').localeCompare(String(b.org_name||''), 'ko');
+  });
+  el.innerHTML = '<option value="">부서를 선택하세요</option>' + list.map(function(o){
+    var indent = '&nbsp;'.repeat(Math.max(((o.org_level||1)-1)*2,0));
+    return '<option value="'+o.org_code+'">'+indent+'['+(o.org_code||'')+'] '+(o.org_name||'')+'</option>';
+  }).join('');
+}
+
+function currentOrgCode(){
+  return (CU && (CU.org_code || CU.dept_code)) || null;
+}
+
+function getManagedOrgCodes(rootOrgCode){
+  if(!rootOrgCode) return [];
+  var result = [];
+  var queue = [rootOrgCode];
+  var seen = {};
+  while(queue.length){
+    var code = queue.shift();
+    if(!code || seen[code]) continue;
+    seen[code] = true;
+    result.push(code);
+    (ORGS || []).forEach(function(o){
+      if(o.parent_org_code === code && !seen[o.org_code]){
+        queue.push(o.org_code);
+      }
+    });
+  }
+  return result;
+}
+
+
+// ══════════════════════════════════════════════
+// 내 업무일지
+// ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 기한 도래 업무 팝업
+// ══════════════════════════════════════════════
+async function checkDueTasks(){
+  if(!sb || !CU) return;
+  try{
+    var todayStr = today();
+    var _dueRes = await sb.from('daily_reports')
+      .select('id,report_title,content_original,due_date,status')
+      .eq('author_user_id', CU.user_id)
+      .lte('due_date', todayStr)
+      .neq('status', '완료')
+      .order('due_date', {ascending:true})
+      .limit(10);
+    var dueData = _dueRes ? _dueRes.data : null;
+    if(!dueData || !dueData.length) return;
+
+    var itemsHtml = '';
+    for(var di=0; di<dueData.length; di++){
+      var dr = dueData[di];
+      var isOverdue = dr.due_date < todayStr;
+      var dLabel = isOverdue ? '기한 초과' : '오늘 기한';
+      var dColor = isOverdue ? '#b91a3d' : '#c8860a';
+      var shortTxt = (dr.content_original||'').substring(0,60) + ((dr.content_original||'').length>60?'...':'');
+      itemsHtml += '<div style="padding:10px 0;border-bottom:1px solid #f0f5f3;display:flex;gap:10px">';
+      itemsHtml += '<div style="flex:1">';
+      if(dr.report_title) itemsHtml += '<div style="font-weight:700;font-size:13px;color:#0f1f17">'+esc(dr.report_title)+'</div>';
+      itemsHtml += '<div style="font-size:12px;color:#5a7a6e;margin-top:2px">'+esc(shortTxt)+'</div>';
+      itemsHtml += '</div>';
+      itemsHtml += '<div style="text-align:right;flex-shrink:0">';
+      itemsHtml += '<div style="font-size:11px;font-weight:700;color:'+dColor+'">'+dLabel+'</div>';
+      itemsHtml += '<div style="font-size:10px;color:#8aaa9e">'+dr.due_date+'</div>';
+      itemsHtml += '</div></div>';
+    }
+
+    var popup = document.getElementById('due-popup');
+    if(!popup){
+      popup = document.createElement('div');
+      popup.id = 'due-popup';
+      popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);width:min(480px,90vw);z-index:9999;overflow:hidden;';
+      document.body.appendChild(popup);
+    }
+
+    var ph = '<div style="background:#1a2a3a;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">';
+    ph += '<div><div style="font-size:15px;font-weight:700;color:#fff">오늘 기한 업무</div>';
+    ph += '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">확인 후 완료 처리해 주세요</div></div>';
+    ph += '<button id="dpop-x" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer">닫기</button>';
+    ph += '</div>';
+    ph += '<div style="padding:4px 20px 16px;max-height:60vh;overflow-y:auto">'+itemsHtml+'</div>';
+    ph += '<div style="padding:12px 20px;border-top:1px solid #f0f5f3;display:flex;gap:8px;justify-content:flex-end">';
+    ph += '<button id="dpop-later" class="btn btn-ghost">나중에</button>';
+    ph += '<button id="dpop-go" class="btn btn-primary">업무일지 보기</button>';
+    ph += '</div>';
+    popup.innerHTML = ph;
+
+    document.getElementById('dpop-x').onclick = function(){ popup.style.display='none'; };
+    document.getElementById('dpop-later').onclick = function(){ popup.style.display='none'; };
+    document.getElementById('dpop-go').onclick = function(){ go('my'); popup.style.display='none'; };
+    popup.style.display = 'block';
+  }catch(e){ console.error('checkDueTasks error', e); }
+}
+
+async function loadMy(){
+  var _dfEl = document.getElementById('f-my-date-from'); var dateFrom = _dfEl ? _dfEl.value : '';
+  var _dtEl = document.getElementById('f-my-date-to'); var dateTo = _dtEl ? _dtEl.value : '';
+  var cat = document.getElementById('f-my-cat').value;
+  var st  = document.getElementById('f-my-status').value;
+  var rpts = [];
+  if(!sb){ rpts = DEMO_REPORTS().filter(function(r){ return r.author_id===CU.id; }); }
+  else{
+    try{
+      var q = sb.from('daily_reports').select('*')
+        .eq('author_user_id', CU.user_id || CU.id)
+        .order('report_date', {ascending:false})
+        .order('created_at', {ascending:false});
+      if(dateFrom) q = q.gte('report_date', dateFrom);
+      if(dateTo)   q = q.lte('report_date', dateTo);
+      if(!dateFrom && !dateTo) q = q.eq('report_date', today()); // 기본: 오늘
+      if(cat) q = q.eq('category_code', cat);
+      if(st)  q = q.eq('status', st);
+      var res = await q;
+      if(res.data) rpts = res.data;
+    }catch(e){ console.error('loadMy 오류', e); toast('업무 목록 조회 오류','err'); }
+  }
+  renderMy(rpts);
+}
+
+function renderMy(rpts){
+  document.getElementById('my-cnt').textContent=rpts.length+'건';
+  document.getElementById('k-tot').textContent=rpts.length;
+  document.getElementById('k-done').textContent=rpts.filter(r=>r.status==='완료').length;
+  document.getElementById('k-wip').textContent=rpts.filter(r=>r.status!=='완료').length;
+  document.getElementById('k-issue').textContent=rpts.filter(r=>r.is_issue).length;
+  var tb=document.getElementById('my-body');
+  if(!rpts.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📝</div><div class="empty-msg">등록된 업무가 없습니다</div></div></td></tr>`;return;}
+  tb.innerHTML=rpts.map(function(r){
+    return '<tr>'
+      +'<td style="font-family:monospace;font-size:11px;color:var(--txt-m)">'+r.report_date+'</td>'
+      +'<td><span class="cat">'+catName(r.category_code)+'</span></td>'
+      +'<td class="cc"><div style="font-weight:700;font-size:13px;margin-bottom:2px">'+(r.report_title?esc(r.report_title):'')+'</div>'+esc(r.content_original)+'</td>'
+      +'<td class="'+pc(r.priority_original)+'"><span class="stars">'+'★'.repeat(r.priority_original||1)+'</span></td>'
+      +'<td><span class="bdg '+stBdg(r.status)+'">'+r.status+'</span></td>'
+      +'<td>'
+        +(r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        +(r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':'')
+        +(r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        +(!r.is_issue&&!r.customer_related&&!r.decision_required?'-':'')
+      +'</td>'
+      +'<td><span class="bdg bdg-stage">'+stageLabel(r.stage)+'</span>'+(r.is_escalated_to_meeting?'<span class="bdg" style="background:#FEF3C7;color:#B45309">회의포함</span>':'')+'</td>'
+      +'<td>'+(r.stage==='submitted'?'<button class="btn btn-ghost btn-xs" onclick="openModal('+r.id+')">수정</button>':'<span style="font-size:10px;color:var(--txt-m)">검토중</span>')+'</td>'
+    +'</tr>';
+  }).join('');
+
+  // 모바일 카드 뷰
+  var cardList = document.getElementById('my-card-list');
+  if(cardList){
+    cardList.innerHTML = rpts.map(function(r){
+      return '<div class="my-card">'
+        +'<div class="my-card-hdr">'
+        +'<div>'
+        +(r.report_title?'<div class="my-card-title">'+esc(r.report_title)+'</div>':'')
+        +'<div style="font-size:11px;color:var(--txt-m);margin-top:2px">'+r.report_date+'</div>'
+        +'</div>'
+        +(r.stage==='submitted'?'<button class="btn btn-ghost btn-xs" onclick="openModal('+r.id+')">수정</button>':'<span class="bdg bdg-stage">'+stageLabel(r.stage)+'</span>')
+        +'</div>'
+        +'<div class="my-card-meta">'
+        +'<span class="cat">'+catName(r.category_code)+'</span>'
+        +'<span class="'+pc(r.priority_original)+' stars">'+'★'.repeat(r.priority_original||1)+'</span>'
+        +'<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        +(r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        +(r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        +'</div>'
+        +'<div class="my-card-content">'+esc(r.content_original)+'</div>'
+        +(r.next_plan?'<div class="my-card-next">▶ 차주 계획: '+esc(r.next_plan)+'</div>':'')
+        +'</div>';
+    }).join('');
+  }
+}
+
+// ══════════════════════════════════════════════
+// 하위 보고 검토 (팀장↑)
+// ══════════════════════════════════════════════
+
+async function loadReview(){
+  var date=document.getElementById('f-rv-date').value;
+
+  // 내 오늘 업무 요약 표시
+  var myRpts = [];
+  if(!sb){
+    myRpts = DEMO_REPORTS().filter(function(r){ return r.author_id===CU.id; });
+  } else {
+    try{
+      var myQ = sb.from('daily_reports').select('*')
+        .eq('author_user_id', CU.user_id || CU.id)
+        .eq('report_date', date)
+        .order('created_at',{ascending:false});
+      var myRes = await myQ;
+      if(myRes && myRes.data) myRpts = myRes.data;
+    }catch(e){
+      console.error('내 오늘 업무 요약 조회 실패', e);
+    }
+  }
+
+  var sumEl=document.getElementById('my-summary-in-review');
+  var sumCont=document.getElementById('my-summary-content');
+  if(sumEl && sumCont && myRpts.length){
+    sumEl.style.display='block';
+    sumCont.innerHTML=myRpts.slice(0,3).map(function(r){
+      return '<div style="display:flex;gap:8px;align-items:flex-start;padding:4px 0;border-bottom:1px dashed var(--border)">'
+        +'<span class="cat" style="flex-shrink:0">'+catName(r.category_code)+'</span>'
+        +'<span style="font-size:12px;color:var(--txt-b);flex:1">'+esc((r.content_original||'').substring(0,50))+((r.content_original||'').length>50?'...':'')+'</span>'
+        +'<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        +'</div>';
+    }).join('')+(myRpts.length>3?'<div style="font-size:11px;color:var(--txt-m);padding-top:6px">외 '+(myRpts.length-3)+'건...</div>':'');
+  } else if(sumEl) {
+    sumEl.style.display='none';
+  }
+
+  var rpts=[];
+  reviewFeedbackMap = {};
+
+  var targetStage = 'submitted';
+  if(CU.position_level >= 4) targetStage = 'dept_approved';
+  else if(CU.position_level >= 3) targetStage = 'team_approved';
+
+  if(!sb){
+    rpts=DEMO_REPORTS().filter(function(r){ return r.author_id!==CU.id && r.stage===targetStage; });
+  }
+  else{
+    try{
+      var q = sb.from('daily_reports')
+        .select('*')
+        .eq('report_date',date)
+        .order('priority_original',{ascending:false})
+        .order('created_at',{ascending:false});
+
+      if(CU.position_level >= 5){
+        q = q.neq('author_user_id', CU.user_id);
+      } else if(CU.position_level >= 4){
+        q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
+      } else if(CU.position_level >= 3){
+        q = q.eq('stage', targetStage).eq('company_code', CU.company_code);
+      } else if(CU.position_level === 2){
+        q = q.eq('stage', targetStage);
+        var managedOrgCodes = getManagedOrgCodes(currentOrgCode());
+        if(managedOrgCodes.length){
+          q = q.in('org_code', managedOrgCodes);
+        } else if(currentOrgCode()){
+          q = q.eq('org_code', currentOrgCode());
+        }
+      }
+
+      var {data, error} = await q;
+      if(error){
+        console.error('하위 보고 검토 조회 실패', error);
+        toast('하위 보고 조회 실패: ' + (error.message || '권한 또는 쿼리 오류'), 'err');
+      } else if(data){
+        rpts=data;
+      }
+
+      // 피드백 로그 로드
+      if(rpts.length){
+        var ids = rpts.map(function(r){ return r.id; });
+        var {data:logs, error:logErr} = await sb.from('escalation_logs')
+          .select('report_id, action, acted_by_name, note, created_at')
+          .in('report_id', ids)
+          .eq('action', 'feedback')
+          .order('created_at', {ascending:false});
+        if(!logErr && logs){
+          logs.forEach(function(l){
+            if(!reviewFeedbackMap[l.report_id]) reviewFeedbackMap[l.report_id] = [];
+            reviewFeedbackMap[l.report_id].push(l);
+          });
+        }
+      }
+
+    }catch(e){
+      console.error('하위 보고 검토 예외', e);
+      toast('하위 보고 조회 중 오류가 발생했습니다', 'err');
+    }
+  }
+
+  var cnt=rpts.length;
+  var bdg=document.getElementById('bdg-review');
+  bdg.textContent=cnt; bdg.style.display=cnt?'inline-block':'none';
+
+  var el=document.getElementById('review-body');
+  if(!rpts.length){
+    var hint = '';
+    if(CU.position_level === 2){
+      hint = currentOrgCode() ? '<div class="empty-sub">현재 조회 범위 조직: '+esc(getDeptName(currentOrgCode()))+'</div>' : '';
+    } else if(CU.position_level >= 3){
+      hint = CU.company_code ? '<div class="empty-sub">현재 조회 범위 계열사: '+esc(coName(CU.company_code))+'</div>' : '';
+    }
+    el.innerHTML='<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">검토할 보고가 없습니다</div>'+hint+'</div>';
+    return;
+  }
+
+  var layerLabel = CU.position_level >= 4 ? '임원 검토' : (CU.position_level >= 3 ? '부서장 검토' : '팀장 검토');
+  var nextLayer  = CU.position_level >= 5 ? '전사 회의' : (CU.position_level >= 4 ? '전사 회의' : (CU.position_level >= 3 ? '임원 단계' : '부서장 단계'));
+  var contentField = CU.position_level >= 4 ? 'content_exec' : (CU.position_level >= 3 ? 'content_dept' : 'content_team');
+  var escLayer = CU.position_level >= 4 ? 'exec' : (CU.position_level >= 3 ? 'dept' : 'team');
+
+  // 사람별 그룹핑
+  var grouped = {};
+  var order = [];
+  rpts.forEach(function(r){
+    var key = r.author_user_id || r.author_name;
+    if(!grouped[key]){
+      grouped[key] = {
+        name: r.author_name,
+        org_code: r.org_code,
+        rpts: []
+      };
+      order.push(key);
+    }
+    grouped[key].rpts.push(r);
+  });
+
+  el.innerHTML = order.map(function(key, idxGroup){
+    var group = grouped[key];
+    var issueCnt = group.rpts.filter(function(r){ return r.is_issue; }).length;
+    var rptHTML = group.rpts.map(function(r){
+      var editedValue = r[contentField] || (CU.position_level >= 3 ? (r.content_team || '') : '');
+      return '<div class="review-item">'
+        + '<div class="review-hdr"><div>'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">'
+        + '<span class="cat">'+catName(r.category_code)+'</span>'
+        + '<span class="'+pc(r.priority_original)+' stars">'+'★'.repeat(r.priority_original||1)+'</span>'
+        + '<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        + (r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        + (r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':'')
+        + (r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        + '</div>'
+        + '<div style="font-size:12px;color:var(--txt-m)">'+esc(r.category_code ? catName(r.category_code) : '')+'</div>'
+        + '</div></div>'
+        + '<div class="review-orig">'
+        + '<div class="review-orig-lbl">원문</div>'
+        + (r.report_title?'<div style="font-size:14px;font-weight:800;color:var(--txt-h);margin-bottom:4px">'+esc(r.report_title)+'</div>':'')
+        + '<div style="font-size:13px;color:var(--txt-b);line-height:1.65">'+esc(r.content_original)+'</div>'
+        + (r.next_plan?'<div style="font-size:12px;color:var(--z-green-d);background:var(--z-green-s);padding:6px 10px;border-radius:6px;margin-top:6px">▶ 차주 계획: '+esc(r.next_plan)+'</div>':'')
+        + (r.is_issue?'<div class="rpt-issue-box">⚠ '+esc(r.issue_content||'')+'</div>':'')
+        + '</div>'
+        + '<div class="review-edit">'
+        + '<div class="review-edit-lbl">'+layerLabel+' 요약 · 전달 메모</div>'
+        + '<textarea id="rv-txt-'+r.id+'" placeholder="상위에 전달할 요약, 판단 요청, 지시사항을 입력하세요. 비워두면 원문이 그대로 전달됩니다.">'+escAttr(editedValue)+'</textarea>'
+        + '</div>'
+        + renderFeedbackBlock(r.id)
+        + '<div class="review-actions">'
+        + '<button class="btn btn-success btn-sm" onclick="escalate('+r.id+', \''+escLayer+'\')">✅ '+nextLayer+' 전달</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="saveLayerEdit('+r.id+', \''+escLayer+'\')">💾 요약 저장</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="saveFeedback('+r.id+')">💬 피드백 저장</button>'
+        + '<button class="btn btn-ghost btn-sm" onclick="promoteToIssueMaster('+r.id+')">📌 지속 이슈 등록</button>'
+        + '<button class="btn btn-ghost btn-sm" style="margin-left:auto;color:var(--txt-m)" onclick="dismiss('+r.id+')">보류</button>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    var collapsedClass = ' collapsed';
+    var bodyDisplay = 'none';
+
+    return '<div class="person-group">'
+      + '<div class="person-group-hdr'+collapsedClass+'" onclick="togglePersonGroup(this)">'
+      + '<div class="person-info">'
+      + '<div class="person-av">'+esc(group.name ? group.name[0] : '?')+'</div>'
+      + '<div><div class="person-name">'+esc(group.name||'-')+'</div><div class="person-dept">'+esc(getDeptName(group.org_code))+'</div></div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<div class="person-badges">'
+      + '<span class="person-cnt">'+group.rpts.length+'건</span>'
+      + (issueCnt?'<span class="person-issue-cnt">⚠ 이슈 '+issueCnt+'</span>':'')
+      + '</div>'
+      + '<span class="person-chevron">▾</span>'
+      + '</div>'
+      + '</div>'
+      + '<div class="person-group-body" style="display:'+bodyDisplay+'">'+rptHTML+'</div>'
+      + '</div>';
+  }).join('');
+}
+
+
+// ══════════════════════════════════════════════
+// 이슈 현황
+// ══════════════════════════════════════════════
+async function loadIssues(){
+  var co=document.getElementById('f-iss-co').value;
+  var cat=document.getElementById('f-iss-cat').value;
+  var rpts=[];
+  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_issue); }
+  else{
+    try{
+      var q=sb.from('daily_reports').select('*').eq('is_issue',true);
+      if(co)q=q.eq('company_code',co);if(cat)q=q.eq('category_code',cat);
+      const{data}=await q.order('priority_original',{ascending:false}).order('report_date',{ascending:false});
+      if(data)rpts=data;
+    }catch(e){}
+  }
+  var el=document.getElementById('issues-body');
+  if(!rpts.length){el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">등록된 이슈가 없습니다</div></div>`;return;}
+  var bdg=document.getElementById('bdg-issue');
+  bdg.textContent=rpts.length;bdg.style.display=rpts.length?'inline-block':'none';
+  el.innerHTML=rpts.map(r=>`
+    <div class="issue-row p${r.priority_original||1}">
+      <div style="padding-top:2px">
+        <span class="${pc(r.priority_original)} stars" style="font-size:14px">${'★'.repeat(r.priority_original||1)}</span>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+          <span class="cat">${catName(r.category_code)}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--txt-s)">${coName(r.company_code)}</span>
+          <span class="bdg ${stBdg(r.status)}">${r.status}</span>
+          ${r.is_urgent?'<span class="bdg bdg-urgent">🚨 긴급직상향</span>':''}
+        </div>
+        <div style="font-size:13px;color:var(--txt-h);line-height:1.5;margin-bottom:6px">${esc(r.content_original)}</div>
+        <div style="font-size:12px;color:var(--danger);background:#FEF2F2;padding:8px 12px;border-radius:6px">⚠ ${esc(r.issue_content||'')}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-weight:600;color:var(--txt-s)">${r.author_name||'-'}</div>
+        <div style="font-size:10px;color:var(--txt-m);font-family:monospace;margin-top:2px">${r.report_date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════
+// 부서 집약
+// ══════════════════════════════════════════════
+async function loadDept(){
+  var date=document.getElementById('f-dp-date').value;
+  var rpts=[];
+  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
+  else{
+    try{
+      const{data}=await sb.from('daily_reports').select('*').eq('company_code',CU.company_code).eq('report_date',date).in('stage',['team_approved','dept_approved','exec_approved']).order('category_code').order('priority_original',{ascending:false});
+      if(data)rpts=data;
+    }catch(e){}
+  }
+  renderGrouped(document.getElementById('dept-body'), rpts, '부서');
+}
+
+function renderGrouped(el, rpts, label){
+  if(!rpts.length){el.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-msg">상향된 보고가 없습니다</div></div>`;return;}
+  // ★★★ + 이슈 = 최상단, 나머지는 우선순위 내림차순
+  rpts.sort(function(a,b){
+    var aTop=(a.priority_original===3&&a.is_issue)?1:0;
+    var bTop=(b.priority_original===3&&b.is_issue)?1:0;
+    if(aTop!==bTop) return bTop-aTop;
+    return (b.priority_original||1)-(a.priority_original||1);
+  });
+  var grouped={};
+  rpts.forEach(r=>{ if(!grouped[r.category_code])grouped[r.category_code]=[]; grouped[r.category_code].push(r); });
+  el.innerHTML=Object.entries(grouped).map(([code,items])=>`
+    <div class="cat-section">
+      <div class="cat-sec-hdr">
+        <div class="cat-sec-ttl">
+          <span>${catIcon(code)}</span>
+          <span>${catName(code)}</span>
+        </div>
+        <div class="cat-sec-meta">
+          <span class="cat-item-cnt">${items.length}건</span>
+          ${items.filter(i=>i.is_issue).length?`<span class="cat-issue-cnt">⚠ 이슈 ${items.filter(i=>i.is_issue).length}</span>`:''}
+          ${items.filter(i=>i.is_urgent).length?`<span class="cat-urgent-cnt">🚨 긴급 ${items.filter(i=>i.is_urgent).length}</span>`:''}
+        </div>
+      </div>
+      <div class="cat-sec-body">
+        ${items.map(r=>rptItemHTML(r)).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function rptItemHTML(r){
+  var displayContent = r.content_exec || r.content_dept || r.content_team || r.content_original;
+  var isEdited = r.content_exec || r.content_dept || r.content_team;
+  return `
+    <div class="rpt-item ${r.is_urgent?'urgent-item':''}">
+      <div class="rpt-pri">
+        <span class="${pc(r.priority_original)} stars" style="font-size:14px">${'★'.repeat(r.priority_original||1)}</span>
+      </div>
+      <div class="rpt-body">
+        <div class="rpt-content">${esc(displayContent)}</div>
+        ${r.is_issue?`<div class="rpt-issue">⚠ ${esc(r.issue_content||'')}</div>`:''}
+        <div class="rpt-layers">
+          ${isEdited?`<span class="layer-chip layer-team">✏ 요약편집됨</span>`:'<span class="layer-chip layer-orig">원문</span>'}
+          <span class="bdg ${stBdg(r.status)}">${r.status}</span>
+          ${r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':''}
+          ${r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':''}
+          ${r.is_urgent?'<span class="bdg bdg-urgent">🚨 긴급직상향</span>':''}
+        </div>
+      </div>
+      <div class="rpt-meta">
+        <div class="rpt-author">${r.author_name||'-'}</div>
+        <div class="rpt-date">${r.report_date}</div>
+      </div>
+    </div>
+  `;
+}
+
+
+function scoreMeetingItem(r){
+  var score = 0;
+  if(r.is_urgent) score += 100;
+  if(r.decision_required) score += 40;
+  if(r.is_issue) score += 30;
+  if(r.customer_related) score += 20;
+  if(r.status !== '완료') score += 10;
+  score += (r.priority_original || 1) * 5;
+  return score;
+}
+function renderMeetingSummary(rpts){
+  var total = rpts.length;
+  var issues = rpts.filter(function(r){ return r.is_issue; }).length;
+  var pending = rpts.filter(function(r){ return r.status !== '완료'; }).length;
+  var decisions = rpts.filter(function(r){ return r.decision_required; }).length;
+  var el = document.getElementById('meeting-summary');
+  if(!el) return;
+  if(!total){ el.style.display='none'; return; }
+  el.style.display='grid';
+  el.innerHTML = ''
+    + '<div class="sm-card"><div class="sm-lbl">총 회의 반영</div><div class="sm-val">'+total+'</div><div class="sm-sub">건</div></div>'
+    + '<div class="sm-card"><div class="sm-lbl">핵심 이슈</div><div class="sm-val">'+issues+'</div><div class="sm-sub">이슈 표시 건</div></div>'
+    + '<div class="sm-card"><div class="sm-lbl">미완료</div><div class="sm-val">'+pending+'</div><div class="sm-sub">진행/이월 건</div></div>'
+    + '<div class="sm-card"><div class="sm-lbl">판단 필요</div><div class="sm-val">'+decisions+'</div><div class="sm-sub">회의 논의 대상</div></div>';
+}
+function renderMeetingFocus(rpts){
+  var el = document.getElementById('meeting-focus');
+  if(!el) return;
+  if(!rpts.length){ el.style.display='none'; return; }
+  var top = rpts.slice().sort(function(a,b){ return scoreMeetingItem(b)-scoreMeetingItem(a); }).slice(0,5);
+  if(!top.length){ el.style.display='none'; return; }
+  el.style.display='block';
+  el.innerHTML = '<h3>금주 핵심 안건</h3><div class="meeting-focus-list">'
+    + top.map(function(r, i){
+      return '<div class="meeting-focus-item">'
+        + '<div class="meeting-focus-rank">'+(i+1)+'</div>'
+        + '<div class="meeting-focus-body">'
+        +   '<div class="meeting-focus-txt">'+esc(r.content_exec || r.content_dept || r.content_team || r.content_original)+'</div>'
+        +   '<div class="meeting-focus-meta">'
+        +     '<span class="cat">'+catName(r.category_code)+'</span>'
+        +     '<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        +     (r.is_issue ? '<span class="bdg bdg-issue">이슈</span>' : '')
+        +     (r.customer_related ? '<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>' : '')
+        +     (r.decision_required ? '<span class="bdg meeting-top-badge">판단필요</span>' : '')
+        +     (r.is_urgent ? '<span class="bdg bdg-urgent">긴급</span>' : '')
+        +     '<span class="bdg bdg-stage">'+coName(r.company_code)+'</span>'
+        +   '</div>'
+        + '</div></div>';
+    }).join('')
+    + '</div>';
+}
+function togglePresentationMode(){
+  document.body.classList.toggle('presentation');
+  var btn = document.getElementById('btn-presentation');
+  if(btn){
+    btn.textContent = document.body.classList.contains('presentation') ? '발표모드 종료' : '발표모드';
+  }
+}
+
+// ══════════════════════════════════════════════
+// 지속 이슈
+// ══════════════════════════════════════════════
+async function loadIssueMaster(){
+  var co=document.getElementById('f-im-co').value;
+  var st=document.getElementById('f-im-status').value;
+  var items=[];
+  if(!sb){
+    items=[];
+  } else {
+    try{
+      var q=sb.from('issue_master').select('*').order('priority_level',{ascending:false}).order('updated_at',{ascending:false});
+      if(co) q=q.eq('company_code',co);
+      if(st) q=q.eq('issue_status',st);
+      var {data}=await q;
+      if(data) items=data;
+    }catch(e){ console.error(e); toast('지속 이슈 조회 실패','err'); }
+  }
+  document.getElementById('im-open').textContent=items.filter(i=>i.issue_status==='open').length;
+  document.getElementById('im-monitor').textContent=items.filter(i=>i.issue_status==='monitoring').length;
+  document.getElementById('im-resolved').textContent=items.filter(i=>i.issue_status==='resolved').length;
+  document.getElementById('im-decision').textContent=items.filter(i=>i.decision_required).length;
+  var bdg=document.getElementById('bdg-issue-master');
+  if(bdg){ bdg.textContent=items.filter(i=>i.issue_status==='open').length; bdg.style.display=items.length?'inline-block':'none'; }
+
+  var el=document.getElementById('issue-master-body');
+  if(!items.length){
+    el.innerHTML=`<div class="empty"><div class="empty-ico">📌</div><div class="empty-msg">등록된 지속 이슈가 없습니다</div></div>`;
+    return;
+  }
+  el.innerHTML=items.map(i=>`
+    <div class="issue-row p${i.priority_level||1}">
+      <div style="padding-top:2px">
+        <span class="${pc(i.priority_level)} stars" style="font-size:14px">${'★'.repeat(i.priority_level||1)}</span>
+      </div>
+      <div style="flex:1">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+          <span class="cat">${catName(i.issue_category)}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--txt-s)">${coName(i.company_code)}</span>
+          <span class="bdg ${issueStatusBadge(i.issue_status)}">${issueStatusLabel(i.issue_status)}</span>
+          ${i.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객사 영향</span>':''}
+          ${i.decision_required?'<span class="bdg" style="background:#FEF3C7;color:#B45309">의사결정 필요</span>':''}
+        </div>
+        <div style="font-size:14px;font-weight:700;color:var(--txt-h);margin-bottom:6px">${esc(i.issue_title)}</div>
+        <div style="font-size:12px;color:var(--txt-b);line-height:1.55;margin-bottom:8px">${esc(i.summary_current||'')}</div>
+        ${i.impact_summary?`<div style="font-size:12px;color:var(--danger);background:#FEF2F2;padding:8px 12px;border-radius:6px;margin-bottom:6px">영향/리스크 · ${esc(i.impact_summary)}</div>`:''}
+        ${i.action_plan?`<div style="font-size:12px;color:var(--z-green-d);background:var(--z-green-s);padding:8px 12px;border-radius:6px">차주 계획 · ${esc(i.action_plan)}</div>`:''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;min-width:92px">
+        <div style="font-size:11px;font-weight:600;color:var(--txt-s)">${i.owner_name||'-'}</div>
+        <div style="font-size:10px;color:var(--txt-m);font-family:monospace;margin-top:2px">${i.start_date||''}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function issueStatusLabel(v){
+  return {open:'진행중',monitoring:'모니터링',resolved:'해결',closed:'종결'}[v]||v;
+}
+function issueStatusBadge(v){
+  return {open:'bdg-issue',monitoring:'bdg-next',resolved:'bdg-done',closed:'bdg-stage'}[v]||'bdg-stage';
+}
+
+// 전사회의 포함 토글
+var imMeeting = false;
+function togIssueMeeting(){
+  imMeeting = !imMeeting;
+  var w=document.getElementById('im-meeting-wrap');
+  var b=document.getElementById('im-meeting-box');
+  if(w) w.classList.toggle('on', imMeeting);
+  if(b) b.textContent = imMeeting ? '✓' : '';
+}
+
+
+
+// ══════════════════════════════════════════════
+// 하위 보고 검토 액션
+// ══════════════════════════════════════════════
+async function escalate(id, layer){
+  var txtEl = document.getElementById('rv-txt-'+id);
+  var editedContent = txtEl ? txtEl.value.trim() : '';
+  if(!sb){ toast('상위 전달 처리됨 (데모)','ok'); loadReview(); return; }
+  showLd(true);
+  try{
+    var stageMap = {'team':'team_approved','dept':'dept_approved','exec':'exec_approved'};
+    var nextStage = stageMap[layer] || 'team_approved';
+    var upd = { stage: nextStage };
+    if(layer==='team'){
+      upd.content_team = editedContent || null;
+    } else if(layer==='dept'){
+      upd.content_dept = editedContent || null;
+    } else if(layer==='exec'){
+      upd.content_exec = editedContent || null;
+      upd.is_escalated_to_meeting = true;
+    }
+    var {error} = await sb.from('daily_reports').update(upd).eq('id', id);
+    if(error) throw error;
+    await sb.from('escalation_logs').insert([{
+      report_id: id, action: 'escalate_'+layer,
+      acted_by_user_id: CU.user_id||null, acted_by_name: CU.name, note: editedContent||null
+    }]);
+    toast('상위 전달 완료','ok');
+    await loadReview();
+    if(layer === 'exec') await loadMeeting();
+  }catch(e){
+    console.error('escalate 오류',e);
+    toast('전달 처리 중 오류가 발생했습니다','err');
+  }
+  showLd(false);
+}
+
+async function saveLayerEdit(id, layer){
+  var txtEl = document.getElementById('rv-txt-'+id);
+  var txt = txtEl ? txtEl.value.trim() : '';
+  if(!sb){ toast('요약 저장됨 (데모)','ok'); return; }
+  try{
+    var upd = {};
+    if(layer==='team') upd.content_team = txt || null;
+    else if(layer==='dept') upd.content_dept = txt || null;
+    else if(layer==='exec') upd.content_exec = txt || null;
+    var {error} = await sb.from('daily_reports').update(upd).eq('id', id);
+    if(error) throw error;
+    await sb.from('escalation_logs').insert([{
+      report_id: id,
+      action: 'save_'+layer,
+      acted_by_user_id: CU.user_id||null,
+      acted_by_name: CU.name,
+      note: txt || null
+    }]);
+    toast('요약 저장 완료','ok');
+  }catch(e){
+    console.error('saveLayerEdit 오류',e);
+    toast('저장 중 오류가 발생했습니다','err');
+  }
+}
+
+async function dismiss(id){
+  if(!sb){ toast('보류 처리됐습니다 (데모)','info'); return; }
+  try{
+    await sb.from('escalation_logs').insert([{
+      report_id: id,
+      action: 'dismiss',
+      acted_by_user_id: CU.user_id||null,
+      acted_by_name: CU.name,
+      note: '보류'
+    }]);
+    toast('보류 처리됐습니다','info');
+  }catch(e){
+    console.error('dismiss 오류', e);
+    toast('보류 처리 중 오류가 발생했습니다','err');
+  }
+}
+
+// 주차 업데이트 모달
+function openWeeklyUpdateModal(issueId, issueTitle){
+  document.getElementById('wu-issue-id').value = issueId;
+  document.getElementById('wu-issue-title').textContent = issueTitle;
+  document.getElementById('wu-summary').value = '';
+  document.getElementById('wu-next-action').value = '';
+  document.getElementById('wu-status').value = 'open';
+  document.getElementById('weekly-update-modal').classList.add('open');
+}
+function closeWeeklyUpdateModal(){
+  document.getElementById('weekly-update-modal').classList.remove('open');
+}
+async function saveWeeklyUpdate(){
+  var issueId = document.getElementById('wu-issue-id').value;
+  var summary = document.getElementById('wu-summary').value.trim();
+  var nextAction = document.getElementById('wu-next-action').value.trim();
+  var status = document.getElementById('wu-status').value;
+  if(!summary){ toast('이번 주 진행 현황을 입력하세요','err'); return; }
+  var wInfo = getWeekInfo(today());
+  if(!sb){ toast('저장됨 (데모)','ok'); closeWeeklyUpdateModal(); return; }
+  try{
+    // 주차 업데이트 저장 (upsert - 같은 주차 중복 방지)
+    var {error: e1} = await sb.from('issue_weekly_update').upsert([{
+      issue_master_id: parseInt(issueId),
+      year_num: wInfo.year_num,
+      week_number: wInfo.week_number,
+      weekly_summary: summary,
+      next_action: nextAction,
+      status_snapshot: status,
+      updated_by_user_id: CU.user_id || null,
+      updated_by_name: CU.name
+    }], { onConflict: 'issue_master_id,year_num,week_number' });
+    if(e1) throw e1;
+    // issue_master 현황도 동기화
+    var {error: e2} = await sb.from('issue_master').update({
+      issue_status: status,
+      summary_current: summary,
+      action_plan: nextAction,
+      last_update_date: today()
+    }).eq('id', parseInt(issueId));
+    if(e2) throw e2;
+    toast('주차 현황 업데이트 완료','ok');
+    closeWeeklyUpdateModal();
+    loadIssueMaster();
+  }catch(e){
+    console.error(e);
+    toast('업데이트 저장 실패','err');
+  }
+}
+
+// 이슈 수정 모달 (기존 데이터 로드)
+async function openIssueEditModal(issueId){
+  if(!sb){ toast('데모 모드에서는 수정이 불가합니다','info'); return; }
+  try{
+    var {data, error} = await sb.from('issue_master').select('*').eq('id', issueId).single();
+    if(error || !data){ toast('이슈 정보를 불러올 수 없습니다','err'); return; }
+    // 모달 열고 기존 데이터 채우기
+    document.getElementById('im-source-report-id').value = 'edit:'+issueId;
+    document.getElementById('im-company').value = data.company_code || '';
+    document.getElementById('im-category').value = data.issue_category || '';
+    document.getElementById('im-status').value = data.issue_status || 'open';
+    document.getElementById('im-title').value = data.issue_title || '';
+    document.getElementById('im-priority').value = data.priority_level || 2;
+    document.getElementById('im-customer').value = data.customer_related ? 'true' : 'false';
+    document.getElementById('im-decision').value = data.decision_required ? 'true' : 'false';
+    document.getElementById('im-start-date').value = data.start_date || today();
+    document.getElementById('im-target-date').value = data.target_date || '';
+    document.getElementById('im-summary').value = data.summary_current || '';
+    document.getElementById('im-impact').value = data.impact_summary || '';
+    document.getElementById('im-action').value = data.action_plan || '';
+    imMeeting = data.include_in_meeting || false;
+    var w=document.getElementById('im-meeting-wrap');
+    var b=document.getElementById('im-meeting-box');
+    if(w) w.classList.toggle('on', imMeeting);
+    if(b) b.textContent = imMeeting ? '✓' : '';
+    document.getElementById('issue-master-modal').classList.add('open');
+  }catch(e){
+    console.error(e);
+    toast('이슈 정보 로드 실패','err');
+  }
+}
+
+function openIssueMasterModal(prefill){
+  document.getElementById('im-source-report-id').value = prefill && prefill.id ? prefill.id : '';
+  document.getElementById('im-start-date').value = today();
+  if(prefill){
+    document.getElementById('im-company').value = prefill.company_code || (CU?CU.company_code:'');
+    document.getElementById('im-category').value = prefill.category_code || 'RISK';
+    document.getElementById('im-title').value = (prefill.content_original||'').substring(0,60);
+    document.getElementById('im-summary').value = prefill.content_original || '';
+    document.getElementById('im-impact').value = prefill.issue_content || '';
+    document.getElementById('im-priority').value = prefill.priority_original || 1;
+    document.getElementById('im-customer').value = prefill.customer_related ? 'true' : 'false';
+    document.getElementById('im-decision').value = prefill.decision_required ? 'true' : 'false';
+  } else {
+    document.getElementById('im-company').value = CU ? CU.company_code : '';
+    document.getElementById('im-category').selectedIndex = 0;
+    document.getElementById('im-status').value = 'open';
+    document.getElementById('im-title').value = '';
+    document.getElementById('im-summary').value = '';
+    document.getElementById('im-impact').value = '';
+    document.getElementById('im-action').value = '';
+    document.getElementById('im-priority').value = '2';
+    document.getElementById('im-customer').value = 'false';
+    document.getElementById('im-decision').value = 'false';
+    document.getElementById('im-target-date').value = '';
+    imMeeting = false;
+    var w=document.getElementById('im-meeting-wrap');
+    var b=document.getElementById('im-meeting-box');
+    if(w) w.classList.remove('on');
+    if(b) b.textContent = '';
+  }
+  document.getElementById('issue-master-modal').classList.add('open');
+}
+function closeIssueMasterModal(){
+  document.getElementById('issue-master-modal').classList.remove('open');
+}
+async function promoteToIssueMaster(reportId){
+  var report=null;
+  if(!sb){ openIssueMasterModal({}); return; }
+  try{
+    var _res_ = await sb.from('daily_reports').select('*').eq('id',reportId).single();
+      var data = _res_ ? _res_.data : null;
+    report=data;
+  }catch(e){}
+  openIssueMasterModal(report||{});
+}
+async function saveIssueMaster(){
+  var sourceId = document.getElementById('im-source-report-id').value;
+  var isEdit = sourceId && sourceId.startsWith('edit:');
+  var editId = isEdit ? parseInt(sourceId.replace('edit:','')) : null;
+
+  var payload = {
+    issue_title: document.getElementById('im-title').value.trim(),
+    issue_category: document.getElementById('im-category').value,
+    company_code: document.getElementById('im-company').value,
+    org_code: CU && CU.org_code ? CU.org_code : null,
+    issue_status: document.getElementById('im-status').value,
+    priority_level: parseInt(document.getElementById('im-priority').value),
+    customer_related: document.getElementById('im-customer').value === 'true',
+    decision_required: document.getElementById('im-decision').value === 'true',
+    owner_user_id: CU && CU.user_id ? CU.user_id : null,
+    owner_name: CU ? CU.name : '',
+    start_date: document.getElementById('im-start-date').value || today(),
+    target_date: document.getElementById('im-target-date').value || null,
+    summary_current: document.getElementById('im-summary').value.trim(),
+    impact_summary: document.getElementById('im-impact').value.trim(),
+    action_plan: document.getElementById('im-action').value.trim(),
+    include_in_meeting: imMeeting,
+    last_update_date: today()
+  };
+  if(!payload.issue_title || !payload.company_code){
+    toast('이슈명과 계열사를 입력하세요','err'); return;
+  }
+  if(!sb){ toast('데모 모드에서는 저장되지 않습니다','info'); closeIssueMasterModal(); return; }
+  try{
+    if(isEdit){
+      // 수정 모드
+      var {error} = await sb.from('issue_master').update(payload).eq('id', editId);
+      if(error) throw error;
+      toast('이슈 수정 완료','ok');
+    } else {
+      // 신규 등록
+      var {data, error} = await sb.from('issue_master').insert([payload]).select();
+      if(error) throw error;
+      if(sourceId && !isEdit && data && data[0]){
+        await sb.from('daily_reports').update({issue_master_id: data[0].id}).eq('id', parseInt(sourceId));
+        await sb.from('escalation_logs').insert([{report_id: parseInt(sourceId), action: 'promote_issue_master', acted_by_user_id: CU.user_id || null, acted_by_name: CU.name, note: data[0].issue_title}]);
+      }
+      toast('지속 이슈 등록 완료','ok');
+    }
+    closeIssueMasterModal();
+    loadIssueMaster();
+  }catch(e){
+    console.error(e);
+    toast('저장 실패','err');
+  }
+}
+
+// ══════════════════════════════════════════════
+// 전사 회의 뷰 (핵심)
+// ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 전사회의 카테고리별 섹션 자동 구성
+// ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 주간 업무보고
+// ══════════════════════════════════════════════
+
+// 주차 셀렉트 옵션 채우기 (최근 12주)
+
+function getWeekRangeFromValue(wkVal){
+  var parts = wkVal.split('-');
+  var yr = parseInt(parts[0]);
+  var wk = parseInt(parts[1]);
+  var startDate = getWeekStartDate(yr, wk);
+  var endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+  return {
+    year: yr,
+    week: wk,
+    startDate: startDate,
+    endDate: endDate,
+    startStr: startDate.toISOString().split('T')[0],
+    endStr: endDate.toISOString().split('T')[0]
+  };
+}
+function weeklyItemTitle(r){
+  return r.report_title || catName(r.category_code) || '업무';
+}
+function weeklyIssueTitle(i){
+  return i.issue_title || i.summary_current || '이슈';
+}
+
+function buildWeekOptions(selId){
+  var sel = document.getElementById(selId);
+  if(!sel) return;
+  var now = new Date();
+  sel.innerHTML = '';
+  for(var i=0; i<12; i++){
+    var d = new Date(now);
+    d.setDate(d.getDate() - i*7);
+    var w = getWeek(d);
+    var y = d.getFullYear();
+    var day = d.getDay();
+    var diff = d.getDate() - (day===0?6:day-1);
+    var mon = new Date(d); mon.setDate(diff);
+    var sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    var label = y+'년 '+w+'주 ('+(mon.getMonth()+1)+'/'+mon.getDate()+'~'+(sun.getMonth()+1)+'/'+sun.getDate()+')';
+    var opt = document.createElement('option');
+    opt.value = y+'-'+w;
+    opt.textContent = label;
+    if(i===0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+// 주간보고 패널 진입
+async function loadWeekly(){
+  buildWeekOptions('wk-sel');
+  await loadWeeklyDetail();
+}
+
+// 선택된 주차의 주간보고 상세 표시
+
+async function loadWeeklyDetail(){
+  var sel = document.getElementById('wk-sel');
+  if(!sel) return;
+  var wkVal = sel.value;
+  var wrap = document.getElementById('weekly-detail');
+  var emptyEl = document.getElementById('weekly-empty');
+  if(!wrap) return;
+  if(!sb){
+    wrap.innerHTML = '';
+    if(emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+
+  try{
+    var range = getWeekRangeFromValue(wkVal);
+    var res = await sb.from('weekly_reports')
+      .select('*')
+      .eq('author_user_id', CU.user_id)
+      .eq('year_num', range.year)
+      .eq('week_number', range.week)
+      .order('created_at', {ascending:false})
+      .limit(1);
+
+    var report = (res && res.data && res.data.length) ? res.data[0] : null;
+    if(!report){
+      wrap.innerHTML = '';
+      if(emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+    if(emptyEl) emptyEl.style.display = 'none';
+
+    var itemRes = await sb.from('weekly_report_items')
+      .select('*, daily_reports(*), issue_master(*)')
+      .eq('weekly_report_id', report.id)
+      .order('id', {ascending:true});
+    var items = (itemRes && itemRes.data) ? itemRes.data : [];
+    var perfItems = items.filter(function(it){ return (it.item_type||'performance') === 'performance'; });
+    var issueItems = items.filter(function(it){ return it.item_type === 'issue'; });
+
+    var html = '<div class="card" style="margin-bottom:12px">';
+    html += '<div class="card-hdr"><span class="card-ttl">'+esc(report.week_label||'주간 보고')+'</span>';
+    html += '<div style="display:flex;gap:8px;align-items:center">';
+    html += '<span class="bdg bdg-stage">'+esc(report.stage||'submitted')+'</span>';
+    html += '<button class="btn btn-ghost btn-sm" onclick="editWeeklyReport('+report.id+')">수정</button>';
+    html += '</div></div>';
+    html += '<div class="card-body">';
+
+    html += '<div class="wk-auto-grid">';
+    html += '<div class="wk-auto-card"><div class="wk-auto-lbl">실행내역</div><div class="wk-auto-val">'+perfItems.length+'</div></div>';
+    html += '<div class="wk-auto-card"><div class="wk-auto-lbl">이슈</div><div class="wk-auto-val">'+issueItems.length+'</div></div>';
+    html += '<div class="wk-auto-card"><div class="wk-auto-lbl">차주 계획</div><div class="wk-auto-val">'+(report.next_week_plan ? 'Y' : '-')</div></div>';
+    html += '<div class="wk-auto-card"><div class="wk-auto-lbl">판단 요청</div><div class="wk-auto-val">'+(report.decision_request ? 'Y' : '-')</div></div>';
+    html += '</div>';
+
+    html += '<div class="wk-detail-grid">';
+    html += '<div class="wk-box"><div class="wk-sec-ttl">금주 실행내역</div>';
+    if(perfItems.length){
+      perfItems.forEach(function(item){
+        var dr = item.daily_reports || {};
+        var title = weeklyItemTitle(dr);
+        var content = item.edited_content || dr.content_original || '';
+        html += '<div style="padding:10px 0;border-bottom:1px dashed var(--border)">';
+        html += '<div class="wk-item-title">'+esc(title)+'</div>';
+        html += '<div class="wk-item-desc">'+esc(content)+'</div>';
+        if(dr.next_plan) html += '<div class="wk-item-sub">▶ 다음 계획: '+esc(dr.next_plan)+'</div>';
+        html += '</div>';
+      });
+    }else{
+      html += '<div class="empty-sub">선택된 실행내역이 없습니다</div>';
+    }
+    html += '</div>';
+
+    html += '<div class="wk-box"><div class="wk-sec-ttl">금주 이슈</div>';
+    if(issueItems.length){
+      issueItems.forEach(function(item){
+        var im = item.issue_master || {};
+        var title = weeklyIssueTitle(im);
+        var content = item.edited_content || im.summary_current || im.issue_title || '';
+        html += '<div style="padding:10px 0;border-bottom:1px dashed var(--border)">';
+        html += '<div class="wk-item-title">'+esc(title)+'</div>';
+        html += '<div class="wk-item-desc">'+esc(content)+'</div>';
+        if(im.action_plan) html += '<div class="wk-item-sub">▶ 조치 계획: '+esc(im.action_plan)+'</div>';
+        html += '</div>';
+      });
+    }else{
+      html += '<div class="empty-sub">선택된 이슈가 없습니다</div>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    if(report.summary){
+      html += '<div class="wk-box" style="margin-top:14px"><div class="wk-sec-ttl">금주 종합 요약</div><div class="wk-item-desc" style="white-space:pre-wrap">'+esc(report.summary)+'</div></div>';
+    }
+    if(report.next_week_plan){
+      html += '<div class="wk-box" style="margin-top:14px;background:#EFF6FF;border-color:#BFDBFE"><div class="wk-sec-ttl" style="color:#1D4ED8">차주 계획</div><div class="wk-item-desc" style="white-space:pre-wrap">'+esc(report.next_week_plan)+'</div></div>';
+    }
+    if(report.decision_request){
+      html += '<div class="wk-box" style="margin-top:14px;background:#FFF7ED;border-color:#FED7AA"><div class="wk-sec-ttl" style="color:#C2410C">의사결정 / 상위 요청</div><div class="wk-item-desc" style="white-space:pre-wrap">'+esc(report.decision_request)+'</div></div>';
+    }
+
+    html += '</div></div>';
+    wrap.innerHTML = html;
+  }catch(e){
+    console.error('loadWeeklyDetail 오류', e);
+    toast('주간보고 조회 중 오류가 발생했습니다','err');
+  }
+}
+
+
+// 주간보고 모달 열기
+
+function openWeeklyModal(editId){
+  buildWeekOptions('wk-modal-week');
+  document.getElementById('wk-summary').value = '';
+  document.getElementById('wk-next-plan').value = '';
+  document.getElementById('wk-decision').value = '';
+  document.getElementById('weekly-modal-bg').dataset.editId = editId || '';
+  loadWeeklyDailyList();
+  document.getElementById('weekly-modal-bg').classList.add('open');
+}
+function closeWeeklyModal(e){
+  if(e && e.target !== document.getElementById('weekly-modal-bg')) return;
+  document.getElementById('weekly-modal-bg').classList.remove('open');
+}
+
+
+// 선택된 주차의 일일보고 목록 로드
+
+async function loadWeeklyDailyList(){
+  var sel = document.getElementById('wk-modal-week');
+  if(!sel || !sb) return;
+  var range = getWeekRangeFromValue(sel.value);
+  var perfWrap = document.getElementById('wk-performance-list');
+  var issueWrap = document.getElementById('wk-issue-list');
+  if(perfWrap) perfWrap.innerHTML = '<div style="padding:18px;text-align:center;color:var(--txt-m)">불러오는 중...</div>';
+  if(issueWrap) issueWrap.innerHTML = '<div style="padding:18px;text-align:center;color:var(--txt-m)">불러오는 중...</div>';
+
+  try{
+    var reportQuery = sb.from('daily_reports')
+      .select('id,report_date,report_title,content_original,category_code,status,next_plan,due_date,decision_required,is_issue,priority_original,stage,company_code')
+      .gte('report_date', range.startStr)
+      .lte('report_date', range.endStr)
+      .order('report_date', {ascending:true})
+      .order('priority_original', {ascending:false});
+
+    if((CU.position_level||1) >= 4){
+      reportQuery = reportQuery.eq('company_code', CU.company_code).in('stage', ['team_approved','dept_approved','exec_approved']);
+    } else if((CU.position_level||1) >= 3){
+      reportQuery = reportQuery.eq('company_code', CU.company_code).in('stage', ['team_approved','dept_approved','exec_approved']);
+    } else if((CU.position_level||1) >= 2){
+      var managed = getManagedOrgCodes(currentOrgCode());
+      reportQuery = reportQuery.in('stage', ['submitted','team_approved']);
+      if(managed.length) reportQuery = reportQuery.in('org_code', managed);
+      else reportQuery = reportQuery.eq('author_user_id', CU.user_id);
+    } else {
+      reportQuery = reportQuery.eq('author_user_id', CU.user_id);
+    }
+
+    var perfRes = await reportQuery;
+    var perfItems = (perfRes && perfRes.data) ? perfRes.data : [];
+    var perfCand = perfItems.filter(function(r){ return !r.is_issue; });
+
+    var issueRes = await sb.from('issue_master')
+      .select('id,issue_title,summary_current,action_plan,issue_status,priority_level,decision_required,company_code,issue_category,last_update_date,updated_at')
+      .eq('company_code', CU.company_code)
+      .in('issue_status', ['open','monitoring'])
+      .order('priority_level', {ascending:false})
+      .order('updated_at', {ascending:false});
+    var issueItems = (issueRes && issueRes.data) ? issueRes.data : [];
+
+    document.getElementById('wk-cand-perf').textContent = perfCand.length;
+    document.getElementById('wk-cand-issue').textContent = issueItems.length;
+    document.getElementById('wk-cand-open').textContent = perfItems.filter(function(r){ return r.status !== '완료'; }).length;
+    document.getElementById('wk-cand-decision').textContent = perfItems.filter(function(r){ return r.decision_required; }).length + issueItems.filter(function(i){ return i.decision_required; }).length;
+
+    if(perfWrap){
+      if(!perfCand.length){
+        perfWrap.innerHTML = '<div style="padding:18px;text-align:center;color:var(--txt-m);font-size:13px">자동 집약된 실행내역 후보가 없습니다</div>';
+      } else {
+        perfWrap.innerHTML = perfCand.map(function(r){
+          return '<label class="wk-item">'
+            + '<input type="checkbox" name="wk-performance-sel" value="'+r.id+'" checked>'
+            + '<div class="wk-item-main">'
+            + '<div class="wk-item-title">'+esc(weeklyItemTitle(r))+'</div>'
+            + '<div class="wk-item-desc">'+esc((r.content_original||'').substring(0,120))+((r.content_original||'').length>120?'...':'')+'</div>'
+            + '<div class="wk-chip-row">'
+            + '<span class="cat">'+catName(r.category_code)+'</span>'
+            + '<span class="bdg '+stBdg(r.status)+'">'+esc(r.status)+'</span>'
+            + (r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+            + (r.due_date?'<span class="bdg bdg-stage">기한 '+esc(r.due_date)+'</span>':'')
+            + '</div>'
+            + (r.next_plan?'<div class="wk-item-sub">▶ 다음 계획: '+esc(r.next_plan)+'</div>':'')
+            + '</div></label>';
+        }).join('');
+      }
+    }
+
+    if(issueWrap){
+      if(!issueItems.length){
+        issueWrap.innerHTML = '<div style="padding:18px;text-align:center;color:var(--txt-m);font-size:13px">표시할 이슈 후보가 없습니다</div>';
+      } else {
+        issueWrap.innerHTML = issueItems.map(function(i){
+          return '<label class="wk-item">'
+            + '<input type="checkbox" name="wk-issue-sel" value="'+i.id+'" checked>'
+            + '<div class="wk-item-main">'
+            + '<div class="wk-item-title">'+esc(weeklyIssueTitle(i))+'</div>'
+            + '<div class="wk-item-desc">'+esc((i.summary_current||'').substring(0,120))+((i.summary_current||'').length>120?'...':'')+'</div>'
+            + '<div class="wk-chip-row">'
+            + '<span class="cat">'+catName(i.issue_category)+'</span>'
+            + '<span class="bdg '+issueStatusBadge(i.issue_status)+'">'+issueStatusLabel(i.issue_status)+'</span>'
+            + (i.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+            + '</div>'
+            + (i.action_plan?'<div class="wk-item-sub">▶ 조치 계획: '+esc(i.action_plan)+'</div>':'')
+            + '</div></label>';
+        }).join('');
+      }
+    }
+  }catch(e){
+    console.error('loadWeeklyDailyList 오류', e);
+    if(perfWrap) perfWrap.innerHTML = '<div style="padding:16px;color:#e53e3e;font-size:13px">조회 중 오류가 발생했습니다</div>';
+    if(issueWrap) issueWrap.innerHTML = '<div style="padding:16px;color:#e53e3e;font-size:13px">조회 중 오류가 발생했습니다</div>';
+  }
+}
+
+
+// 주의 시작일(월요일) 계산
+function getWeekStartDate(year, week){
+  var jan4 = new Date(year, 0, 4);
+  var jan4Day = jan4.getDay() || 7;
+  var weekStart = new Date(jan4);
+  weekStart.setDate(jan4.getDate() - jan4Day + 1 + (week-1)*7);
+  return weekStart;
+}
+
+// 주간보고 저장
+
+async function saveWeeklyReport(){
+  var sel = document.getElementById('wk-modal-week');
+  var nextPlan = document.getElementById('wk-next-plan').value.trim();
+  var summary = document.getElementById('wk-summary').value.trim();
+  var decision = document.getElementById('wk-decision').value.trim();
+  if(!nextPlan){ toast('차주 계획을 입력하세요','err'); return; }
+
+  var range = getWeekRangeFromValue(sel.value);
+  var perfChecked = document.querySelectorAll('input[name="wk-performance-sel"]:checked');
+  var issueChecked = document.querySelectorAll('input[name="wk-issue-sel"]:checked');
+  var selectedPerfIds = []; perfChecked.forEach(function(cb){ selectedPerfIds.push(parseInt(cb.value)); });
+  var selectedIssueIds = []; issueChecked.forEach(function(cb){ selectedIssueIds.push(parseInt(cb.value)); });
+
+  if(!sb){ toast('주간보고 저장됨 (데모)','ok'); closeWeeklyModal(); return; }
+
+  try{
+    var editId = document.getElementById('weekly-modal-bg').dataset.editId;
+    var payload = {
+      author_user_id: CU.user_id,
+      author_name: CU.name,
+      company_code: CU.company_code,
+      org_code: CU.org_code,
+      year_num: range.year,
+      week_number: range.week,
+      week_label: range.year+'년 '+range.week+'주',
+      summary: summary || null,
+      next_week_plan: nextPlan,
+      decision_request: decision || null,
+      stage: 'submitted',
+      updated_at: new Date().toISOString()
+    };
+
+    var wrId;
+    if(editId){
+      var upRes = await sb.from('weekly_reports').update(payload).eq('id', parseInt(editId));
+      if(upRes.error) throw upRes.error;
+      wrId = parseInt(editId);
+      await sb.from('weekly_report_items').delete().eq('weekly_report_id', wrId);
+    } else {
+      var insRes = await sb.from('weekly_reports').insert([payload]).select();
+      if(insRes.error) throw insRes.error;
+      wrId = insRes.data[0].id;
+    }
+
+    var itemPayloads = [];
+    selectedPerfIds.forEach(function(did){
+      itemPayloads.push({ weekly_report_id: wrId, daily_report_id: did, item_type: 'performance' });
+    });
+    selectedIssueIds.forEach(function(iid){
+      itemPayloads.push({ weekly_report_id: wrId, issue_master_id: iid, item_type: 'issue' });
+    });
+
+    if(itemPayloads.length){
+      var itemRes = await sb.from('weekly_report_items').insert(itemPayloads);
+      if(itemRes.error) throw itemRes.error;
+    }
+
+    toast('주간보고가 저장됐습니다','ok');
+    closeWeeklyModal();
+    await loadWeeklyDetail();
+  }catch(e){
+    console.error('saveWeeklyReport 오류', e);
+    toast('저장 중 오류가 발생했습니다','err');
+  }
+}
+
+
+// 주간보고 수정
+
+async function editWeeklyReport(id){
+  if(!sb) return;
+  try{
+    var res = await sb.from('weekly_reports').select('*').eq('id', id).single();
+    if(!res.data) return;
+    var r = res.data;
+
+    buildWeekOptions('wk-modal-week');
+    var sel = document.getElementById('wk-modal-week');
+    sel.value = r.year_num+'-'+r.week_number;
+    document.getElementById('wk-summary').value = r.summary || '';
+    document.getElementById('wk-next-plan').value = r.next_week_plan || '';
+    document.getElementById('wk-decision').value = r.decision_request || '';
+    document.getElementById('weekly-modal-bg').dataset.editId = id;
+    document.getElementById('weekly-modal-bg').classList.add('open');
+
+    await loadWeeklyDailyList();
+
+    var itemRes = await sb.from('weekly_report_items').select('daily_report_id, issue_master_id, item_type').eq('weekly_report_id', id);
+    if(itemRes.data){
+      itemRes.data.forEach(function(item){
+        if((item.item_type||'performance') === 'issue' && item.issue_master_id){
+          var cb1 = document.querySelector('input[name="wk-issue-sel"][value="'+item.issue_master_id+'"]');
+          if(cb1) cb1.checked = true;
+        } else if(item.daily_report_id){
+          var cb2 = document.querySelector('input[name="wk-performance-sel"][value="'+item.daily_report_id+'"]');
+          if(cb2) cb2.checked = true;
+        }
+      });
+    }
+  }catch(e){
+    console.error('editWeeklyReport 오류', e);
+  }
+}
+
+
+function renderMeetingSections(rpts){
+  // 카테고리 → 전사회의 섹션 매핑
+  var sectionMap = {
+    'NEW_BIZ':     { label:'📊 신규 사업기회', icon:'📊', color:'#1D4ED8', bg:'#EFF6FF' },
+    'RENEW':       { label:'🔄 재계약 관리',   icon:'🔄', color:'#065f46', bg:'#D1FAE5' },
+    'LABOR':       { label:'⚖️ 노무 이슈',     icon:'⚖️', color:'#92400e', bg:'#FEF3C7' },
+    'SAFETY':      { label:'🦺 안전보건',      icon:'🦺', color:'#7c3aed', bg:'#EDE9FE' },
+    'RISK':        { label:'⚠️ 리스크 관리',   icon:'⚠️', color:'#b91a3d', bg:'#fce4eb' },
+    'STRATEGY':    { label:'🎯 전략/기획',     icon:'🎯', color:'#1a2a3a', bg:'#f0f5f3' },
+    'HR':          { label:'👥 인사/총무/교육',icon:'👥', color:'#5b21b6', bg:'#F5F3FF' },
+    'IT':          { label:'💻 IT/DX/시스템',  icon:'💻', color:'#0369a1', bg:'#E0F2FE' },
+    'ADMIN':       { label:'📋 일반 행정',     icon:'📋', color:'#374151', bg:'#F9FAFB' },
+  };
+
+  var secEl = document.getElementById('meeting-sections');
+  if(!secEl) return;
+
+  if(!rpts || !rpts.length){ secEl.style.display='none'; return; }
+
+  // 카테고리별 그룹핑
+  var grouped = {};
+  rpts.forEach(function(r){
+    var cat = r.category_code || 'ADMIN';
+    if(!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  });
+
+  var sectionsHtml = '';
+  Object.keys(grouped).forEach(function(cat){
+    var sec = sectionMap[cat] || { label:'📋 '+catName(cat), icon:'📋', color:'#374151', bg:'#F9FAFB' };
+    var items = grouped[cat];
+    sectionsHtml += '<div class="meeting-section" style="margin-bottom:16px">'
+      +'<div class="meeting-sec-hdr" style="background:'+sec.bg+';border-left:4px solid '+sec.color+';padding:10px 16px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:14px;font-weight:700;color:'+sec.color+'">'+sec.label+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+sec.color+'">'+items.length+'건</span>'
+      +'</div>'
+      +'<div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">';
+
+    items.forEach(function(r){
+      sectionsHtml += '<div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;background:#fff">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+        +'<div style="flex:1">'
+        +(r.report_title?'<div style="font-size:13px;font-weight:700;color:#0f1f17;margin-bottom:4px">'+esc(r.report_title)+'</div>':'')
+        +'<div style="font-size:12px;color:#374151;line-height:1.6">'+esc(r.content_original)+'</div>'
+        +(r.next_plan?'<div style="font-size:11px;color:#065f46;background:#D1FAE5;padding:4px 8px;border-radius:4px;margin-top:4px">▶ 차주: '+esc(r.next_plan)+'</div>':'')
+        +(r.is_issue?'<div style="font-size:11px;color:#b91a3d;background:#fce4eb;padding:4px 8px;border-radius:4px;margin-top:4px">⚠ '+esc(r.issue_content||'')+'</div>':'')
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0;min-width:80px">'
+        +'<div style="font-size:11px;font-weight:600;color:#5a7a6e">'+esc(r.author_name||'-')+'</div>'
+        +(r.due_date?'<div style="font-size:10px;color:#8aaa9e;margin-top:2px">기한 '+r.due_date+'</div>':'')
+        +(r.decision_required?'<div style="font-size:10px;color:#C2410C;font-weight:700;margin-top:2px">의사결정 필요</div>':'')
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    });
+
+    sectionsHtml += '</div></div>';
+  });
+
+  secEl.innerHTML = sectionsHtml;
+  secEl.style.display = 'block';
+}
+
+function renderMeetingIssues(issues){
+  var sec = document.getElementById('meeting-issues-section');
+  var body = document.getElementById('meeting-issues-body');
+  var cnt = document.getElementById('meeting-issues-cnt');
+  if(!sec || !body) return;
+  if(!issues || !issues.length){
+    sec.style.display='none';
+    return;
+  }
+  sec.style.display='block';
+  if(cnt) cnt.textContent = issues.length+'건';
+
+  body.innerHTML = issues.map(function(i){
+    // 최신 주차 업데이트 추출
+    var updates = i.issue_weekly_update || [];
+    var latest = updates.sort(function(a,b){ return (b.year_num*100+b.week_number)-(a.year_num*100+a.week_number); })[0];
+    var weeklySummary = latest ? latest.weekly_summary : (i.summary_current||'');
+    var nextAction = latest ? latest.next_action : (i.action_plan||'');
+
+    return '<div class="rpt-item '+(i.priority_level===3?'issue-item':'')+'" style="border-bottom:1px solid #fce4eb">'
+      +'<div class="rpt-pri"><span class="rpt-pri-star '+(i.priority_level===3?'p3c':i.priority_level===2?'p2c':'p1c')+'">'+'★'.repeat(i.priority_level||1)+'</span></div>'
+      +'<div class="rpt-body">'
+      +'<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px;flex-wrap:wrap">'
+      +'<span class="cat">'+catName(i.issue_category)+'</span>'
+      +'<span style="font-size:11px;font-weight:600;color:var(--txt-s)">'+coName(i.company_code)+'</span>'
+      +'<span class="bdg '+issueStatusBadge(i.issue_status)+'">'+issueStatusLabel(i.issue_status)+'</span>'
+      +(i.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객사 영향</span>':'')
+      +(i.decision_required?'<span class="bdg" style="background:#FEF3C7;color:#B45309">의사결정 필요</span>':'')
+      +'</div>'
+      +'<div style="font-size:13px;font-weight:700;color:var(--txt-h);margin-bottom:4px">'+esc(i.issue_title)+'</div>'
+      +(weeklySummary?'<div style="font-size:12px;color:var(--txt-b);margin-bottom:4px">'+esc(weeklySummary)+'</div>':'')
+      +(nextAction?'<div style="font-size:11px;color:var(--z-green-d);background:var(--z-green-s);padding:5px 10px;border-radius:6px">▶ 차주 계획: '+esc(nextAction)+'</div>':'')
+      +'</div>'
+      +'<div class="rpt-meta">'
+      +'<div class="rpt-author">'+(i.owner_name||'-')+'</div>'
+      +'<div class="rpt-date">'+(i.start_date||'')+'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+}
+
+async function loadMeeting(){
+  var weekVal=document.getElementById('f-mt-week').value;
+  if(!weekVal){toast('주차를 선택하세요','err');return;}
+  showLd(true);
+  meetingData={};
+  var rpts=[];
+  var meetingIssues=[]; // 전사회의 포함 이슈
+  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
+  else{
+    try{
+      var [year,week]=weekVal.split('-').map(Number);
+      // 일 단위 보고
+      const{data}=await sb.from('daily_reports').select('*').eq('week_number',week).eq('year_num',year).eq('is_escalated_to_meeting',true).order('company_code').order('category_code').order('priority_original',{ascending:false});
+      if(data)rpts=data;
+      // 지속 이슈 (include_in_meeting=true, open/monitoring)
+      const{data:issueData}=await sb.from('issue_master')
+        .select('*, issue_weekly_update(weekly_summary, next_action, status_snapshot, year_num, week_number)')
+        .eq('include_in_meeting', true)
+        .in('issue_status', ['open','monitoring'])
+        .order('priority_level', {ascending:false});
+      if(issueData) meetingIssues=issueData;
+    }catch(e){ console.error(e); }
+  }
+  // 계열사별 그룹핑
+  COS.forEach(c=>{ meetingData[c.company_code]=[]; });
+  rpts.forEach(r=>{ if(meetingData[r.company_code]) meetingData[r.company_code].push(r); });
+
+  // 긴급 배너
+  var urgents=rpts.filter(r=>r.is_urgent);
+  var banner=document.getElementById('urgent-banner');
+  if(urgents.length){ banner.style.display='flex'; document.getElementById('urgent-cnt').textContent=urgents.length; }
+  else banner.style.display='none';
+
+  // 탭 생성 (보고 없는 계열사는 흐리게)
+  var tabList=document.getElementById('co-tab-list');
+  tabList.innerHTML=COS.map(c=>{
+    var _md=meetingData[c.company_code]; var cnt=_md?_md.length:0;
+    var isEmpty = cnt===0;
+    return `<div class="co-tab ${isEmpty?'empty-co':''} ${c.company_code===activeCo?'on':''}" data-co="${c.company_code}" onclick="showCo('${c.company_code}')">
+      <span class="co-tab-name">${c.company_name.replace('(본사)','').replace('제니엘','')}</span>
+      ${cnt?`<span class="co-tab-cnt">${cnt}</span>`:'<span style="font-size:9px;color:var(--txt-m)">-</span>'}
+    </div>`;
+  }).join('');
+
+  // 전사회의 이슈 섹션 렌더링 (전체 공통)
+  renderMeetingIssues(meetingIssues);
+  // 카테고리별 보고 섹션 자동 구성
+  renderMeetingSections(rpts);
+
+  // 빈 상태/데이터 상태 전환
+  var emptyEl = document.getElementById('meeting-empty');
+  var mainEl  = document.getElementById('meeting-main');
+  var totalRpts = rpts.length;
+
+  if(totalRpts === 0){
+    renderMeetingSummary([]);
+    renderMeetingFocus([]);
+    if(emptyEl){ emptyEl.style.display='block'; emptyEl.innerHTML='<div class="co-empty"><div class="co-empty-ico">📋</div><div class="co-empty-msg">이번 주 등록된 보고가 없습니다</div><div class="co-empty-sub">팀원들의 업무가 상향되면 여기에 표시됩니다</div></div>'; }
+    if(mainEl) mainEl.style.display='none';
+  } else {
+    renderMeetingSummary(rpts);
+    renderMeetingFocus(rpts);
+    if(emptyEl) emptyEl.style.display='none';
+    if(mainEl) mainEl.style.display='grid';
+    // 첫 번째 보고 있는 계열사 자동 선택
+    var firstCo=COS.find(c=>(meetingData[c.company_code]||[]).length>0);
+    showCo(firstCo&&firstCo.company_code?firstCo.company_code:COS[0].company_code);
+  }
+
+  // 부제 업데이트
+  var subEl = document.getElementById('meeting-sub');
+  if(subEl){
+    var weekVal2 = document.getElementById('f-mt-week').value;
+    var wOpt = document.getElementById('f-mt-week').options[document.getElementById('f-mt-week').selectedIndex];
+    subEl.textContent = wOpt ? wOpt.text + ' · 총 ' + totalRpts + '건' : '조회 완료';
+  }
+
+  showLd(false);
+  if(totalRpts > 0) toast(totalRpts+'건 로드 완료','ok');
+}
+
+function showCo(code){
+  activeCo=code;
+  document.querySelectorAll('.co-tab').forEach(t=>{ t.classList.toggle('on',t.dataset.co===code); });
+  var rpts=meetingData[code]||[];
+  var co=COS.find(c=>c.company_code===code);
+  var coName2=co&&co.company_name?co.company_name:code;
+  var el=document.getElementById('co-content');
+
+  if(!rpts.length){
+    el.innerHTML=`
+      <div class="co-content-hdr">
+        <div><div class="co-content-ttl">${coName2}</div></div>
+      </div>
+      <div class="co-empty">
+        <div class="co-empty-ico">📋</div>
+        <div class="co-empty-msg">이번 주 보고가 없습니다</div>
+        <div class="co-empty-sub">팀원 업무가 상향되면 여기에 표시됩니다</div>
+      </div>`;
+    return;
+  }
+
+  var grouped={};
+  rpts.forEach(r=>{ if(!grouped[r.category_code])grouped[r.category_code]=[]; grouped[r.category_code].push(r); });
+  var totalIssues=rpts.filter(r=>r.is_issue).length;
+  var catCount=Object.keys(grouped).length;
+
+  el.innerHTML=`
+    <div class="co-content-hdr">
+      <div>
+        <div class="co-content-ttl">${coName2}</div>
+        <div class="co-content-meta">
+          <span class="co-meta-chip co-meta-total">보고 ${rpts.length}건</span>
+          <span class="co-meta-chip co-meta-cat">${catCount}개 분야</span>
+          ${totalIssues?`<span class="co-meta-chip co-meta-issue">이슈 ${totalIssues}건</span>`:''}
+        </div>
+      </div>
+    </div>
+    ${Object.entries(grouped).map(([code2,items])=>`
+      <div class="cat-section">
+        <div class="cat-sec-hdr" onclick="toggleCatSec(this)">
+          <div class="cat-sec-ttl">
+            <div class="cat-sec-icon">${catIcon(code2)}</div>
+            <span>${catName(code2)}</span>
+          </div>
+          <div class="cat-sec-meta">
+            <span class="cat-item-cnt">${items.length}건</span>
+            ${items.filter(i=>i.is_issue).length?`<span class="cat-issue-cnt">이슈 ${items.filter(i=>i.is_issue).length}</span>`:''}
+            <span class="cat-chevron">▾</span>
+          </div>
+        </div>
+        <div class="cat-sec-body">
+          ${items.map(r=>rptItemHTML(r)).join('')}
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
+
+function toggleCatSec(hdr){
+  var body = hdr.nextElementSibling;
+  var collapsed = hdr.classList.toggle('collapsed');
+  body.style.display = collapsed ? 'none' : 'block';
+}
+
+function exportMeeting(){
+  toast('인쇄 모드로 전환됩니다','info');
+  setTimeout(()=>window.print(),300);
+}
+
+// ══════════════════════════════════════════════
+// 업무 등록 모달
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// 멀티 항목 업무 등록 모달
+// ══════════════════════════════════════════════
+var itemCount = 0; // 현재 항목 수
+var editItemId = null; // 수정 모드일 때 ID
+
+async function openModal(id){
+  itemImages = {};
+  editItemId = id||null;
+  mUrgent = false;
+
+  var isEdit = !!id;
+  document.getElementById('modal-ttl').textContent = isEdit ? '업무 수정' : '업무 등록';
+  document.getElementById('m-id').value = id||'';
+  document.getElementById('m-edit-mode').value = isEdit ? '1' : '0';
+  document.getElementById('m-date').value = today();
+  document.getElementById('m-add-btn-wrap').style.display = isEdit ? 'none' : 'block';
+  document.getElementById('btn-save-next').style.display = isEdit ? 'none' : 'inline-flex';
+
+  mUpper = false;
+  updUpperUI();
+  var ug = document.getElementById('m-upper-g');
+  if(ug) ug.style.display = (CU && CU.position_level >= 2) ? 'flex' : 'none';
+
+  itemCount = 0;
+  document.getElementById('m-items-wrap').innerHTML = '';
+
+  if(isEdit){
+    if(!sb){
+      var all = DEMO_REPORTS();
+      var r = null;
+      for(var i=0;i<all.length;i++){ if(all[i].id===id){ r=all[i]; break; } }
+      if(r){ document.getElementById('m-date').value = r.report_date; addItem(r); }
+      else { addItem(); }
+    } else {
+      showLd(true);
+      try{
+        var res = await sb.from('daily_reports').select('*').eq('id', id).single();
+        if(res.error || !res.data){
+          toast('기존 데이터를 불러오지 못했습니다','err');
+          addItem();
+        } else {
+          var d = res.data;
+          document.getElementById('m-date').value = d.report_date || today();
+          mUpper = !!d.is_escalated_to_meeting;
+          updUpperUI();
+          addItem(d);
+        }
+      }catch(e){
+        console.error('openModal 로드 오류', e);
+        toast('수정 데이터 로드 중 오류가 발생했습니다','err');
+        addItem();
+      }finally{
+        showLd(false);
+      }
+    }
+  } else {
+    addItem();
+  }
+
+  document.getElementById('rpt-modal').classList.add('open');
+}
+
+function closeModal(){
+  document.getElementById('rpt-modal').classList.remove('open');
+}
+
+function addItem(prefill){
+  itemCount++;
+  var idx = itemCount;
+  var wrap = document.getElementById('m-items-wrap');
+
+  var catOpts = CATS.map(function(c){
+    return '<option value="'+c.category_code+'">'+c.icon+' '+c.category_name+'</option>';
+  }).join('');
+
+  var defaultCat = prefill ? prefill.category_code : '';
+  var defaultContent = prefill ? (prefill.content_original||'') : '';
+  var defaultPri = prefill ? (prefill.priority_original||1) : 1;
+  var defaultSt = prefill ? (prefill.status||'진행') : '진행';
+  var defaultIssue = prefill ? !!prefill.is_issue : false;
+  var defaultIssueContent = prefill ? (prefill.issue_content||'') : '';
+
+  var priCls = ['','p1-on','p2-on','p3-on'];
+  var stMap = {'완료':'s-done','진행':'s-wip','이월':'s-next'};
+
+  var html = '<div class="m-item" id="mitem-'+idx+'">';
+  html += '<div class="m-item-hdr">';
+  html += '<span class="m-item-num">업무 '+idx+'</span>';
+  if(idx > 1){
+    html += '<button class="m-item-del" onclick="delItem('+idx+')" title="항목 삭제">✕</button>';
+  }
+  html += '</div>';
+
+  // 카테고리
+  html += '<div class="fg2"><label>카테고리 *</label>';
+  html += '<select id="mcat-'+idx+'" onchange="">';
+  html += '<option value="">선택하세요</option>'+catOpts;
+  html += '</select></div>';
+
+  // 업무 내용
+  html += '<div class="fg2"><label>업무 내용 *</label>';
+  html += '<textarea id="mcontent-'+idx+'" placeholder="업무 내용, 결과, 다음 조치 순으로 간략히 기재하세요"></textarea></div>';
+
+  // 우선순위
+  html += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
+  html += '<button class="sel-btn '+(defaultPri===1?'p1-on':'')+'" id="mpb1-'+idx+'" onclick="setIP('+idx+',1)">★ 일반</button>';
+  html += '<button class="sel-btn '+(defaultPri===2?'p2-on':'')+'" id="mpb2-'+idx+'" onclick="setIP('+idx+',2)">★★ 주요</button>';
+  html += '<button class="sel-btn '+(defaultPri===3?'p3-on':'')+'" id="mpb3-'+idx+'" onclick="setIP('+idx+',3)">★★★ 긴급</button>';
+  html += '</div></div>';
+
+  // 상태
+  html += '<div class="fg2"><label>진행 상태</label><div class="sel-row">';
+  html += '<button class="sel-btn '+(defaultSt==="완료"?"s-done":"")+'" id="msbD-'+idx+'" onclick="setIS('+idx+',0)">✅ 완료</button>';
+  html += '<button class="sel-btn '+(defaultSt==="진행"?"s-wip":"")+'" id="msbW-'+idx+'" onclick="setIS('+idx+',1)">🔄 진행</button>';
+  html += '<button class="sel-btn '+(defaultSt==="이월"?"s-next":"")+'" id="msbN-'+idx+'" onclick="setIS('+idx+',2)">➡️ 이월</button>';
+  html += '</div></div>';
+
+  // 이슈 토글
+  html += '<div class="fg2"><label>이슈 여부</label>';
+  html += '<div class="tog-wrap'+(defaultIssue?' on':'')+'" id="mtog-'+idx+'" onclick="togItemIssue('+idx+')">';
+  html += '<div class="tog-sw'+(defaultIssue?' on':'')+'" id="msw-'+idx+'"></div>';
+  html += '<span class="tog-lbl" id="mtoglbl-'+idx+'">'+(defaultIssue?'⚠ 이슈 있음':'이슈 없음')+'</span>';
+  html += '</div></div>';
+
+  // 이슈 내용
+  html += '<div id="missue-g-'+idx+'" style="display:'+(defaultIssue?'block':'none')+'">';
+  html += '<div class="fg2"><label>이슈 상세 *</label>';
+  html += '<textarea id="missue-'+idx+'" placeholder="이슈 내용과 영향, 필요 조치 사항을 기재하세요"></textarea></div></div>';
+
+  // 회의용 추가 속성
+  var defaultCustomer = prefill ? !!prefill.customer_related : false;
+  var defaultDecision = prefill ? !!prefill.decision_required : false;
+  html += '<div class="fgrid" style="grid-template-columns:1fr 1fr;gap:10px">';
+  html += '<div class="fg2"><label>고객사 영향</label><div class="chk-wrap'+(defaultCustomer?' on':'')+'" id="mcustomer-'+idx+'" onclick="toggleItemCheck('+idx+', \'customer\')"><div class="chk-box">'+(defaultCustomer?'✓':'')+'</div><span class="chk-lbl">고객사 관련 / 대외 영향 있음</span></div></div>';
+  html += '<div class="fg2"><label>의사결정 필요</label><div class="chk-wrap'+(defaultDecision?' on':'')+'" id="mdecision-'+idx+'" onclick="toggleItemCheck('+idx+', \'decision\')"><div class="chk-box">'+(defaultDecision?'✓':'')+'</div><span class="chk-lbl">상위 판단/회의 논의 필요</span></div></div>';
+  html += '</div>';
+
+  // 이미지 첨부
+  html += '<div class="fg2" style="margin-top:8px">';
+  html += '<label>이미지 첨부 <span style="font-weight:400;color:var(--txt-m)">(선택 · 여러 장 가능)</span></label>';
+  html += '<div class="img-upload-area" id="imgarea-'+idx+'">';
+  html += '<input type="file" id="imgfile-'+idx+'" accept="image/*" multiple onchange="handleImgSelect('+idx+', this)">';
+  html += '<div class="img-upload-label">📎 클릭하거나 이미지를 끌어다 놓으세요<br><span>캡처, 엑셀 표 등 이미지 파일</span></div>';
+  html += '</div>';
+  html += '<div class="img-preview-wrap" id="imgpreview-'+idx+'"></div>';
+  html += '</div>';
+
+  html += '</div>'; // m-item 끝
+
+  wrap.insertAdjacentHTML('beforeend', html);
+
+  // prefill 값 설정
+  if(prefill){
+    var catEl = document.getElementById('mcat-'+idx);
+    if(catEl) catEl.value = defaultCat;
+    var contEl = document.getElementById('mcontent-'+idx);
+    if(contEl) contEl.value = defaultContent;
+    if(defaultIssue){
+      var issEl = document.getElementById('missue-'+idx);
+      if(issEl) issEl.value = defaultIssueContent;
+    }
+  }
+
+  // 기본 상태 선택 (prefill 없을 때)
+  if(!prefill){
+    setIP(idx, 1);
+    setIS(idx, 1);
+  }
+
+  // 드래그앤드롭 이벤트 등록
+  var area = document.getElementById('imgarea-'+idx);
+  if(area){
+    area.ondragover = function(e){ e.preventDefault(); area.classList.add('drag-over'); };
+    area.ondragleave = function(){ area.classList.remove('drag-over'); };
+    area.ondrop = function(e){
+      e.preventDefault();
+      area.classList.remove('drag-over');
+      if(e.dataTransfer && e.dataTransfer.files) handleImgSelect(idx, {files: e.dataTransfer.files});
+    };
+  }
+
+  // 번호 업데이트
+  updateItemNumbers();
+}
+
+function delItem(idx){
+  var el = document.getElementById('mitem-'+idx);
+  if(el) el.parentNode.removeChild(el);
+  updateItemNumbers();
+}
+
+function updateItemNumbers(){
+  var items = document.querySelectorAll('.m-item');
+  for(var i=0;i<items.length;i++){
+    var numEl = items[i].querySelector('.m-item-num');
+    if(numEl) numEl.textContent = '업무 '+(i+1);
+    // 첫 항목은 삭제 버튼 숨김
+    var delBtn = items[i].querySelector('.m-item-del');
+    if(delBtn) delBtn.style.display = i===0 ? 'none' : 'flex';
+  }
+}
+
+function setIP(idx, v){
+  [1,2,3].forEach(function(i){
+    var btn = document.getElementById('mpb'+i+'-'+idx);
+    if(btn) btn.className = 'sel-btn'+(i===v?' p'+i+'-on':'');
+  });
+}
+
+function setIS(idx, v){
+  var ids = ['msbD','msbW','msbN'];
+  var cls = ['s-done','s-wip','s-next'];
+  for(var i=0;i<3;i++){
+    var btn = document.getElementById(ids[i]+'-'+idx);
+    if(btn) btn.className = 'sel-btn' + (i===v ? ' '+cls[i] : '');
+  }
+}
+
+function togItemIssue(idx){
+  var tog = document.getElementById('mtog-'+idx);
+  var sw = document.getElementById('msw-'+idx);
+  var lbl = document.getElementById('mtoglbl-'+idx);
+  var g = document.getElementById('missue-g-'+idx);
+  var isOn = tog.classList.contains('on');
+  tog.classList.toggle('on',!isOn);
+  sw.classList.toggle('on',!isOn);
+  lbl.textContent = !isOn ? '⚠ 이슈 있음' : '이슈 없음';
+  if(g) g.style.display = !isOn ? 'block' : 'none';
+}
+function toggleItemCheck(idx, type){
+  var id = type==='customer' ? 'mcustomer-'+idx : 'mdecision-'+idx;
+  var wrap = document.getElementById(id);
+  if(!wrap) return;
+  var on = wrap.classList.contains('on');
+  wrap.classList.toggle('on', !on);
+  var box = wrap.querySelector('.chk-box');
+  if(box) box.textContent = !on ? '✓' : '';
+}
+
+// 하위 호환 (기존 코드 참조)
+function setP(v){ mPri=v; }
+function setSt(v){ mSt=v; }
+function togIssue(){ mIssue=!mIssue; }
+function updIssueUI(){}
+function togUpper(){ mUpper=!mUpper; updUpperUI(); }
+function updUpperUI(){
+  var w=document.getElementById('m-upper');
+  var b=document.getElementById('m-upper-box');
+  if(w) w.classList.toggle('on',mUpper);
+  if(b) b.textContent=mUpper?'✓':'';
+}
+
+function getItemPriority(idx){
+  for(var i=1;i<=3;i++){
+    var btn=document.getElementById('mpb'+i+'-'+idx);
+    if(btn && btn.className.indexOf('p'+i+'-on')>=0) return i;
+  }
+  return 1;
+}
+function getItemStatus(idx){
+  var ids=['msbD','msbW','msbN'];
+  var vals=['완료','진행','이월'];
+  var cls=['s-done','s-wip','s-next'];
+  for(var i=0;i<3;i++){
+    var btn=document.getElementById(ids[i]+'-'+idx);
+    if(btn && btn.className.indexOf(cls[i])>=0) return vals[i];
+  }
+  return '진행';
+}
+function getItemChecked(idx, type){
+  var id = type==='customer' ? 'mcustomer-'+idx : 'mdecision-'+idx;
+  var wrap = document.getElementById(id);
+  return !!(wrap && wrap.classList.contains('on'));
+}
+
+async function saveReport(keepOpen){
+  if(keepOpen===undefined) keepOpen=false;
+  var date = document.getElementById('m-date').value;
+  var isEdit = document.getElementById('m-edit-mode').value==='1';
+  var editId = document.getElementById('m-id').value;
+
+
+
+  // 모든 항목 수집
+  var items = document.querySelectorAll('.m-item');
+  if(items.length===0){ toast('업무 항목을 입력하세요','err'); return; }
+
+  var payloads = [];
+  var valid = true;
+
+  for(var i=0;i<items.length;i++){
+    var itemEl = items[i];
+    var idAttr = itemEl.id; // mitem-N
+    var idx = parseInt(idAttr.replace('mitem-',''));
+
+    var catEl = document.getElementById('mcat-'+idx);
+    var contEl = document.getElementById('mcontent-'+idx);
+    var cat = catEl ? catEl.value : '';
+    var content = contEl ? contEl.value.trim() : '';
+
+    if(!content){ toast((i+1)+'번 업무 내용을 입력하세요','err'); valid=false; break; }
+    if(!cat){ toast((i+1)+'번 카테고리를 선택하세요','err'); valid=false; break; }
+
+    var isIssue = document.getElementById('mtog-'+idx) && document.getElementById('mtog-'+idx).classList.contains('on');
+    var issueEl = document.getElementById('missue-'+idx);
+    var issueContent = issueEl ? issueEl.value.trim() : '';
+    if(isIssue && !issueContent){ toast((i+1)+'번 이슈 내용을 입력하세요','err'); valid=false; break; }
+
+    var weekInfo = getWeekInfo(date);
+    var titleEl = document.getElementById('mtitle-'+idx);
+    var nextEl = document.getElementById('mnext-'+idx);
+    var dueEl = document.getElementById('mdue-'+idx);
+    payloads.push({
+      report_date: date,
+      year_num: weekInfo.year_num,
+      week_number: weekInfo.week_number,
+      stage: 'submitted',
+      author_user_id: CU.user_id,
+      author_name: CU.name,
+      author_position_level: CU.position_level,
+      company_code: CU.company_code,
+      org_code: currentOrgCode(),
+      report_title: titleEl ? titleEl.value.trim() : null,
+      category_code: cat,
+      content_original: content,
+      next_plan: nextEl ? nextEl.value.trim() : null,
+      due_date: dueEl && dueEl.value ? dueEl.value : null,
+      priority_original: getItemPriority(idx),
+      status: getItemStatus(idx),
+      is_issue: isIssue,
+      issue_content: isIssue ? issueContent : null,
+      customer_related: getItemChecked(idx, 'customer'),
+      decision_required: getItemChecked(idx, 'decision'),
+      is_selected_team: false,
+      is_selected_dept: false,
+      is_selected_exec: false,
+      is_escalated_to_meeting: false,
+      is_urgent: false,
+    });
+  }
+
+  if(!valid) return;
+  showLd(true);
+
+  if(!sb){
+    var msg = isEdit ? '수정됨 (데모)' : payloads.length+'건 등록됨 (데모)';
+    toast(msg,'ok');
+    if(keepOpen){
+      // 항목만 초기화, 모달 유지
+      itemCount=0;
+      document.getElementById('m-items-wrap').innerHTML='';
+      addItem();
+      showLd(false);
+    } else {
+      closeModal();
+      loadMy();
+      showLd(false);
+    }
+    return;
+  }
+
+  try{
+    if(isEdit && editId && payloads.length>0){
+      var {error:updErr} = await sb.from('daily_reports').update(payloads[0]).eq('id',editId);
+      if(updErr) throw updErr;
+      toast('업무가 수정되었습니다','ok');
+    } else {
+      var {error:insErr} = await sb.from('daily_reports').insert(payloads);
+      if(insErr) throw insErr;
+      toast(payloads.length+'건 등록되었습니다','ok');
+    }
+    if(keepOpen){
+      itemCount=0;
+      document.getElementById('m-items-wrap').innerHTML='';
+      addItem();
+    } else {
+      closeModal();
+    }
+    await loadMy();
+    if(document.getElementById('panel-review') && document.getElementById('panel-review').classList.contains('on')){ await loadReview(); }
+  }catch(e){ console.error('saveReport 오류',e); toast('저장 중 오류가 발생했습니다: '+(e.message||'알 수 없는 오류'),'err'); }
+  showLd(false);
+}
+
+// ══════════════════════════════════════════════
+// 관리자
+// ══════════════════════════════════════════════
+async function regUser(){
+  if(sb){ toast('운영용 계정 생성은 Supabase Auth에서 먼저 생성 후 users_profile과 연결하는 방식으로 운영하세요.','info'); return; }
+
+  var name=document.getElementById('a-name').value.trim();
+  var co=document.getElementById('a-co').value;
+  var dept=document.getElementById('a-dept').value.trim();
+  var pos=document.getElementById('a-pos').value.trim();
+  var lv=parseInt(document.getElementById('a-lv').value);
+  var lid=document.getElementById('a-lid').value.trim();
+  var pw=document.getElementById('a-pw').value;
+  if(!name||!co||!lid||!pw){toast('필수 항목을 입력하세요','err');return;}
+  if(!sb){toast('등록됨 (데모)','ok');return;}
+  showLd(true);
+  try{ await sb.from('users_profile').insert([{name,company_code:co,org_code:dept||null,position_name:pos,position_level:lv,login_id:lid,is_active:true}]); toast('사용자 등록 완료','ok'); loadUsers(); }
+  catch(e){toast('등록 실패: '+(e.message||'오류'),'err');}
+  showLd(false);
+}
+
+async function loadUsers(){
+  var tb=document.getElementById('user-body');
+  if(!sb){ tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-m)">Supabase 연결 후 사용자 목록이 표시됩니다</td></tr>'; return; }
+  try{
+    const{data}=await sb.from('users_profile').select('*').order('company_code').order('position_level',{ascending:false});
+    tb.innerHTML=(data||[]).map(u=>`<tr><td>${u.name}</td><td style="font-size:11px">${coName(u.company_code)}<br><span style="color:var(--txt-m)">${getDeptName(u.org_code||u.dept_code)}</span></td><td>${u.position_name||'-'}</td><td style="text-align:center">${u.position_level}</td><td><span class="bdg ${u.is_active?'bdg-done':'bdg-issue'}">${u.is_active?'활성':'비활성'}</span></td></tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-m)">없음</td></tr>';
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// 유틸
+// ══════════════════════════════════════════════
+function go(tab){
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('on'); });
+  document.querySelectorAll('.nav').forEach(function(n){ n.classList.remove('on'); });
+  var _pe=document.getElementById('panel-'+tab); if(_pe) _pe.classList.add('on');
+  var _ne=document.querySelector('[data-tab="'+tab+'"]'); if(_ne) _ne.classList.add('on');
+  // 모바일 하단 네비 동기화
+  document.querySelectorAll('.mob-nav-item').forEach(i=>i.classList.toggle('on',i.dataset.mtab===tab));
+  if(tab==='issues') loadIssues();
+  if(tab==='issue-master') loadIssueMaster();
+  if(tab==='review') loadReview();
+  if(tab==='weekly') loadWeekly();
+  if(tab==='admin') loadUsers();
+  closeSdb();
+}
+function catName(code){ var _c=CATS.find(function(c){return c.category_code===code;}); return _c?_c.category_name:code; }
+function catIcon(code){ var _ci=CATS.find(function(c){return c.category_code===code;}); return _ci?_ci.icon:'📋'; }
+function coName(code){ var _co=COS.find(function(c){return c.company_code===code;}); return _co?_co.company_name:code; }
+function pc(p){ return ['','p1c','p2c','p3c'][p||1]||'p1c'; }
+function stBdg(s){ return {'완료':'bdg-done','진행':'bdg-wip','이월':'bdg-next'}[s]||'bdg-wip'; }
+function stageLabel(s){ return {'draft':'작성중','submitted':'제출','team_approved':'팀장확인','dept_approved':'부서확인','exec_approved':'임원확인'}[s]||s; }
+function esc(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+function escAttr(str){ if(!str)return''; return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// 하위 보고 피드백 블록 렌더링
+function togglePersonGroup(hdr){
+  var body = hdr.nextElementSibling;
+  var isCollapsed = hdr.classList.contains('collapsed');
+  if(isCollapsed){
+    hdr.classList.remove('collapsed');
+    body.style.display = 'block';
+  } else {
+    hdr.classList.add('collapsed');
+    body.style.display = 'none';
+  }
+}
+
+function renderFeedbackBlock(reportId){
+  return '<div class="review-feedback">'
+    + '<div class="review-feedback-lbl">💬 피드백 / 메모</div>'
+    + '<div class="feedback-input-row">'
+    + '<textarea id="fb-txt-'+reportId+'" placeholder="피드백, 지시사항, 메모를 입력하세요 (직원에게 표시됩니다)" rows="2"></textarea>'
+    + '<button class="btn btn-primary btn-sm" style="flex-shrink:0;padding:6px 14px" onclick="saveFeedback('+reportId+')">저장</button>'
+    + '</div>'
+    + '</div>';
+}
+
+async function saveFeedback(reportId){
+  var txt = document.getElementById('fb-txt-'+reportId);
+  if(!txt || !txt.value.trim()){ toast('피드백 내용을 입력하세요','err'); return; }
+  if(!sb){ toast('저장됨 (데모)','ok'); return; }
+  try{
+    var {error} = await sb.from('escalation_logs').insert([{
+      report_id: reportId,
+      action: 'feedback',
+      acted_by_user_id: CU.user_id || null,
+      acted_by_name: CU.name,
+      note: txt.value.trim()
+    }]);
+    if(error) throw error;
+    txt.value = '';
+    toast('피드백 저장 완료','ok');
+  }catch(e){
+    console.error('saveFeedback 오류', e);
+    toast('피드백 저장 중 오류가 발생했습니다','err');
+  }
+}
+function showLd(v){ document.getElementById('ld').classList.toggle('show',v); }
+function toast(msg,type='info'){
+  var c=document.getElementById('toasts');
+  var t=document.createElement('div');
+  t.className=`toast toast-${type==='ok'?'ok':type==='err'?'err':'info'}`;
+  t.textContent=msg; c.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(40px)';t.style.transition='all .3s';},2500);
+  setTimeout(()=>t.remove(),2800);
+}
+
+// ══════════════════════════════════════════════
+// 모바일 사이드바 / 네비
+// ══════════════════════════════════════════════
+function toggleSdb(){
+  var sdb=document.getElementById('sdb');
+  var ov=document.getElementById('sdb-overlay');
+  var isOpen=sdb.classList.contains('open');
+  sdb.classList.toggle('open',!isOpen);
+  ov.classList.toggle('show',!isOpen);
+}
+function closeSdb(){
+  document.getElementById('sdb').classList.remove('open');
+  document.getElementById('sdb-overlay').classList.remove('show');
+}
+
+function mobGo(tab){
+  closeSdb();
+  go(tab);
+  // 하단 네비 활성
+  document.querySelectorAll('.mob-nav-item').forEach(i=>i.classList.toggle('on',i.dataset.mtab===tab));
+}
+
+// 권한별 모바일 메뉴 표시
+function updateMobNav(lv){
+  if(lv>=2){ var r=document.getElementById('mn-review'); if(r) r.style.display='flex'; }
+  if(lv>=3){ var d=document.getElementById('mn-dept'); if(d) d.style.display='flex'; }
+  if(lv>=1){ var m=document.getElementById('mn-meeting'); if(m) m.style.display='flex'; }
+}
+
+
+// ══════════════════════════════════════════════
+// 이미지 첨부 기능
+// ══════════════════════════════════════════════
+var itemImages = {}; // { idx: [ {dataUrl, name, size} ] }
+
+function handleImgSelect(idx, input) {
+  var files = input.files;
+  if(!files || !files.length) return;
+  if(!itemImages[idx]) itemImages[idx] = [];
+  var MAX = 5; // 항목당 최대 5장
+  var current = itemImages[idx].length;
+  for(var i=0; i<files.length; i++){
+    if(current + i >= MAX){
+      toast('이미지는 항목당 최대 '+MAX+'장까지 첨부 가능합니다','info');
+      break;
+    }
+    (function(file){
+      // 용량 체크 (5MB)
+      if(file.size > 5 * 1024 * 1024){
+        toast(file.name+' - 5MB 이하 이미지만 첨부 가능합니다','err');
+        return;
+      }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        itemImages[idx].push({ dataUrl: e.target.result, name: file.name, size: file.size });
+        renderImgPreview(idx);
+      };
+      reader.readAsDataURL(file);
+    })(files[i]);
+  }
+  // 파일 input 초기화 (같은 파일 재선택 가능하게)
+  input.value = '';
+}
+
+function renderImgPreview(idx) {
+  var wrap = document.getElementById('imgpreview-'+idx);
+  if(!wrap) return;
+  var imgs = itemImages[idx] || [];
+  wrap.innerHTML = imgs.map(function(img, i){
+    return '<div class="img-thumb">'
+      + '<img src="'+img.dataUrl+'" alt="" data-idx="'+idx+'" data-i="'+i+'" title="'+img.name+'" onclick="openLightboxByEl(this)">'
+      + '<button class="img-thumb-del" data-idx="'+idx+'" data-i="'+i+'" onclick="delImgByEl(this)">✕</button>'
+      + '</div>';
+  }).join('');
+  // 드래그앤드롭 이벤트 (재연결)
+  var area = document.getElementById('imgarea-'+idx);
+  if(area){
+    area.ondragover = function(e){ e.preventDefault(); area.classList.add('drag-over'); };
+    area.ondragleave = function(){ area.classList.remove('drag-over'); };
+    area.ondrop = function(e){
+      e.preventDefault(); area.classList.remove('drag-over');
+      var dt = e.dataTransfer;
+      if(dt && dt.files){
+        var fakeInput = { files: dt.files };
+        handleImgSelect(idx, fakeInput);
+      }
+    };
+  }
+}
+
+function delImg(idx, imgIdx) {
+  if(!itemImages[idx]) return;
+  itemImages[idx].splice(imgIdx, 1);
+  renderImgPreview(idx);
+}
+
+function openLightbox(idx, imgIdx) {
+  var imgs = itemImages[idx] || [];
+  var img = imgs[imgIdx];
+  if(!img) return;
+  var lb = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lightbox-img');
+  var lbName = document.getElementById('lightbox-name');
+  if(lb && lbImg){
+    lbImg.src = img.dataUrl;
+    lbName.textContent = img.name + ' (' + Math.round(img.size/1024) + 'KB)';
+    lb.classList.add('open');
+  }
+}
+
+function openLightboxUrl(url, name) {
+  var lb = document.getElementById('lightbox');
+  var lbImg = document.getElementById('lightbox-img');
+  var lbName = document.getElementById('lightbox-name');
+  if(lb && lbImg){
+    lbImg.src = url;
+    try { lbName.textContent = decodeURIComponent(name||''); } catch(e){ lbName.textContent = name||''; }
+    lb.classList.add('open');
+  }
+}
+
+function closeLightbox() {
+  var lb = document.getElementById('lightbox');
+  if(lb) lb.classList.remove('open');
+}
+
+// 키보드 ESC로 라이트박스 닫기
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape') closeLightbox();
+});
+
+// 이미지 썸네일 클릭 이벤트 위임
+document.addEventListener('click', function(e){
+  var el = e.target;
+  if(el.classList.contains('rpt-img-clickable') || el.closest('.rpt-img-clickable')){
+    var target = el.classList.contains('rpt-img-clickable') ? el : el.closest('.rpt-img-clickable');
+    var iset = parseInt(target.getAttribute('data-iset'));
+    var ii = parseInt(target.getAttribute('data-ii'));
+    if(window._rptImgs && window._rptImgs[iset]){
+      var img = window._rptImgs[iset][ii];
+      if(img) openLightboxUrl(img.dataUrl, img.name);
+    }
+  }
+});
+
+
+function renderRptImgThumbs(imgs, mode) {
+  if(!imgs || !imgs.length) return '';
+  var show = mode === 'tbl' ? 2 : 3;
+  // 이미지 데이터를 window._rptImgs에 임시 저장하여 onClick 충돌 방지
+  if(!window._rptImgs) window._rptImgs = [];
+  var imgSetIdx = window._rptImgs.length;
+  window._rptImgs.push(imgs);
+  var thumbs = imgs.slice(0, show).map(function(img, i){
+    return '<div class="rpt-img-thumb">'
+      + '<img src="'+img.dataUrl+'" data-iset="'+imgSetIdx+'" data-ii="'+i+'" class="rpt-img-clickable" alt="">'
+      + '</div>';
+  }).join('');
+  var more = imgs.length > show
+    ? '<span class="rpt-img-more" data-iset="'+imgSetIdx+'" data-ii="'+show+'" class="rpt-img-clickable">+' + (imgs.length-show) + '</span>'
+    : '';
+  return '<div class="rpt-imgs">'+thumbs+more+'</div>';
+}
+
+function openLightboxByEl(imgEl) {
+  var idx = imgEl.getAttribute('data-idx');
+  var i = parseInt(imgEl.getAttribute('data-i'));
+  var imgs = itemImages[idx] || [];
+  if(imgs[i]) openLightboxUrl(imgs[i].dataUrl, imgs[i].name);
+}
+function delImgByEl(btn) {
+  var idx = btn.getAttribute('data-idx');
+  var i = parseInt(btn.getAttribute('data-i'));
+  delImg(idx, i);
+}
+
+</script>
+</body>
+</html>
