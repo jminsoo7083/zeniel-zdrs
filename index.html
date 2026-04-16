@@ -117,9 +117,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt-
 .hdr-logo-txt .t1{font-size:15px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
 .hdr-logo-txt .t2{font-size:9px;color:rgba(255,255,255,.4);letter-spacing:1.5px;text-transform:uppercase;}
 .hdr-center{flex:1;padding:0 20px;display:flex;align-items:center;gap:16px;}
-.hdr-date{font-family:'JetBrains Mono',monospace;font-size:12px;color:rgba(255,255,255,.5);}
+.hdr-date{font-family:monospace,monospace;font-size:12px;color:rgba(255,255,255,.5);}
 .hdr-week{
-  font-family:'JetBrains Mono',monospace;font-size:11px;
+  font-family:monospace,monospace;font-size:11px;
   background:rgba(255,255,255,.08);color:rgba(255,255,255,.7);
   padding:3px 10px;border-radius:20px;
 }
@@ -219,7 +219,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt-
 .kpi.green::after{background:var(--z-green);}
 .kpi.orange::after{background:var(--warn);}
 .kpi-lbl{font-size:10px;font-weight:600;color:var(--txt-m);letter-spacing:.5px;text-transform:uppercase;}
-.kpi-val{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:var(--txt-h);letter-spacing:-1px;margin:4px 0 2px;}
+.kpi-val{font-family:monospace,monospace;font-size:32px;font-weight:700;color:var(--txt-h);letter-spacing:-1px;margin:4px 0 2px;}
 .kpi-sub{font-size:11px;color:var(--txt-m);}
 
 /* 카드 */
@@ -517,7 +517,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt-
 .rpt-date{
   font-size:10px;color:var(--txt-m);
   margin-top:2px;
-  font-family:'JetBrains Mono',monospace;
+  font-family:monospace,monospace;
 }
 
 /* 빈 계열사 */
@@ -589,7 +589,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--txt-
   font-size:10px;font-weight:700;color:var(--txt-m);text-transform:uppercase;letter-spacing:.8px;
 }
 .meeting-summary .sm-val{
-  font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;color:var(--txt-h);margin-top:4px;
+  font-family:monospace,monospace;font-size:26px;font-weight:700;color:var(--txt-h);margin-top:4px;
 }
 .meeting-summary .sm-sub{font-size:11px;color:var(--txt-m);margin-top:2px;}
 .meeting-focus{
@@ -1037,6 +1037,50 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   .review-actions { gap:4px; padding:10px 12px; }
   .review-actions .btn { font-size:11px; padding:5px 8px; }
 }
+
+/* ── 내 업무일지 모바일 카드형 ── */
+@media(max-width:768px){
+  .my-tbl-wrap { display:none !important; }
+  .my-card-list { display:block !important; }
+}
+@media(min-width:769px){
+  .my-tbl-wrap { display:block; }
+  .my-card-list { display:none; }
+}
+.my-card-list { display:none; }
+.my-card {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:10px;
+  padding:14px 16px;
+  margin-bottom:10px;
+}
+.my-card-hdr {
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:8px;gap:8px;
+}
+.my-card-title {
+  font-size:14px;font-weight:700;color:var(--txt-h);flex:1;line-height:1.4;
+}
+.my-card-meta {
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.my-card-content {
+  font-size:13px;color:var(--txt-b);line-height:1.6;
+  margin-bottom:8px;
+}
+.my-card-next {
+  font-size:12px;color:var(--z-green-d);
+  background:var(--z-green-s);
+  padding:6px 10px;border-radius:6px;
+  margin-bottom:8px;
+}
+.my-card-ftr {
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;
+}
+
 </style>
 </head>
 <body>
@@ -1174,17 +1218,18 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <div class="kpi red"><div class="kpi-lbl">이슈</div><div class="kpi-val" id="k-issue">0</div><div class="kpi-sub">건</div></div>
       </div>
 
-      <div class="fbar">
-        <span class="fbar-lbl">날짜</span>
-        <input type="date" id="f-my-date">
+      <div class="fbar" style="flex-wrap:wrap;gap:6px">
+        <span class="fbar-lbl">기간</span>
+        <input type="date" id="f-my-date-from" onchange="loadMy()" style="width:130px">
+        <span style="color:var(--txt-m);font-size:12px">~</span>
+        <input type="date" id="f-my-date-to" onchange="loadMy()" style="width:130px">
         <span class="fbar-lbl">카테고리</span>
-        <select id="f-my-cat"><option value="">전체</option></select>
+        <select id="f-my-cat" onchange="loadMy()"><option value="">전체</option></select>
         <span class="fbar-lbl">상태</span>
-        <select id="f-my-status">
+        <select id="f-my-status" onchange="loadMy()">
           <option value="">전체</option>
           <option>완료</option><option>진행</option><option>이월</option>
         </select>
-        <button class="btn btn-ghost btn-sm" onclick="loadMy()">조회</button>
       </div>
 
       <div class="card">
@@ -1342,6 +1387,9 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
           <div class="co-empty-sub">계열사별 주간 보고 현황이 표시됩니다</div>
         </div>
       </div>
+
+      <!-- 카테고리별 보고 섹션 -->
+      <div id="meeting-sections" style="display:none;margin-bottom:16px"></div>
 
       <!-- 지속 이슈 섹션 -->
       <div id="meeting-issues-section" style="display:none;margin-bottom:16px">
@@ -1682,10 +1730,10 @@ function resetUI(){
   document.getElementById('lpw').value='';
   document.getElementById('lerr').textContent='';
   var mn = document.getElementById('mob-nav'); if(mn) mn.style.display='none';
-  ['nav-review-sec','nav-admin-sec'].forEach(function(id){
+  var _arr_ = ['nav-review-sec','nav-admin-sec']; _arr_.forEach(function(id){
     var el=document.getElementById(id); if(el) el.style.display='none';
   });
-  ['nav-dept','nav-meeting'].forEach(function(id){
+  var _arr_ = ['nav-dept','nav-meeting']; _arr_.forEach(function(id){
     var el=document.getElementById(id); if(el) el.style.display='none';
   });
   document.querySelectorAll('.nav').forEach(function(n){ n.classList.remove('on'); });
@@ -1697,8 +1745,8 @@ function resetUI(){
 function today(){ return new Date().toISOString().split('T')[0]; }
 
 function setHeaderInfo(){
-  const d = new Date();
-  const days=['일','월','화','수','목','금','토'];
+  var d = new Date();
+  var days=['일','월','화','수','목','금','토'];
   document.getElementById('hdr-date').textContent = d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate())+' ('+days[d.getDay()]+')';
   var _w=getWeek(d);
   var _wd=d.getDay(); var _diff=d.getDate()-(_wd===0?6:_wd-1);
@@ -1709,9 +1757,9 @@ function setHeaderInfo(){
 }
 function pad(n){return String(n).padStart(2,'0');}
 function getWeek(d){
-  const dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  var dt=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
   dt.setUTCDate(dt.getUTCDate()+4-(dt.getUTCDay()||7));
-  const y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
+  var y=new Date(Date.UTC(dt.getUTCFullYear(),0,1));
   return Math.ceil((((dt-y)/86400000)+1)/7);
 }
 
@@ -1728,7 +1776,7 @@ function getWeekInfo(dateStr){
 // ══════════════════════════════════════════════
 async function loadCurrentUserProfile(authUserId){
   try{
-    const { data, error } = await sb.from('users_profile').select('*').eq('user_id', authUserId).eq('is_active', true).single();
+    var { data, error } = await sb.from('users_profile').select('*').eq('user_id', authUserId).eq('is_active', true).single();
     if(error || !data){
       document.getElementById('lerr').textContent='로그인은 성공했지만 사용자 프로필이 없습니다.';
       return false;
@@ -1743,27 +1791,27 @@ async function loadCurrentUserProfile(authUserId){
 }
 
 async function doLogin(){
-  const id=document.getElementById('lid').value.trim();
-  const pw=document.getElementById('lpw').value;
-  const err=document.getElementById('lerr');
+  var id=document.getElementById('lid').value.trim();
+  var pw=document.getElementById('lpw').value;
+  var err=document.getElementById('lerr');
   if(!id||!pw){err.textContent='이메일과 비밀번호를 입력하세요.';return;}
   err.textContent=''; showLd(true);
 
   if(!sb){
-    const u=DEMO_USERS[id];
+    var u=DEMO_USERS[id];
     if(u&&pw==='1234'){ CU=u; localStorage.setItem('zdrs2_user',JSON.stringify(CU)); enterApp(); }
     else err.textContent='로그인 정보가 올바르지 않습니다.';
     showLd(false); return;
   }
 
   try{
-    const { data, error } = await sb.auth.signInWithPassword({ email:id, password:pw });
+    var { data, error } = await sb.auth.signInWithPassword({ email:id, password:pw });
     if(error || !data || !data.user){
       err.textContent='로그인 정보가 올바르지 않습니다.';
       showLd(false);
       return;
     }
-    const ok = await loadCurrentUserProfile(data.user.id);
+    var ok = await loadCurrentUserProfile(data.user.id);
     if(ok){
       document.getElementById('lid').value='';
       document.getElementById('lpw').value='';
@@ -1785,7 +1833,7 @@ async function doLogout(){
 async function enterApp(){
   document.getElementById('login-wrap').style.display='none';
   document.getElementById('app').style.display='block';
-  const u=CU;
+  var u=CU;
   document.getElementById('uav').textContent=u.name[0];
   document.getElementById('uname').textContent=u.name;
   document.getElementById('upos').textContent=u.position_name||'-';
@@ -1794,7 +1842,7 @@ async function enterApp(){
   document.getElementById('sb-lvl').textContent=u.position_name||getLvlLabel(u.position_level);
   document.getElementById('my-sub').textContent=new Date().toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})+' 기준';
 
-  const lv=u.position_level||1;
+  var lv=u.position_level||1;
   if(lv>=2){
     document.getElementById('nav-review-sec').style.display='block';
     document.getElementById('m-upper-g').style.display='block';
@@ -1815,9 +1863,16 @@ async function enterApp(){
 
   await initMeta();
   // 날짜 기본값 재설정
-  const t = today();
-  ['f-my-date','f-rv-date','f-dp-date'].forEach(id=>{
-    const el=document.getElementById(id); if(el&&!el.value) el.value=t;
+  var t = today();
+  // 기간 조회 기본값: 오늘
+  var todayVal = today();
+  var fromEl = document.getElementById('f-my-date-from');
+  var toEl   = document.getElementById('f-my-date-to');
+  if(fromEl) fromEl.value = todayVal;
+  if(toEl)   toEl.value   = todayVal;
+
+  ;['f-rv-date','f-dp-date'].forEach(function(id){
+    var el=document.getElementById(id); if(el&&!el.value) el.value=t;
   });
 
   // ── 직급별 기본 화면 분기 ──
@@ -1841,10 +1896,12 @@ async function enterApp(){
   } else {
     await loadMy();
   }
+  // 기한 도래 업무 팝업 체크 (로그인 후 1.5초 뒤)
+  setTimeout(function(){ checkDueTasks(); }, 1500);
 }
 
 function getLvlLabel(lv){
-  return['','파트원/팀원','과장/팀장','실장/사업부장','본부장/대표이사','전략기획실장'][lv]||'-';
+  var _lvls=['','파트원/팀원','과장/팀장','실장/사업부장','본부장/대표이사','전략기획실장']; return _lvls[lv]||'-';
 }
 
 function getDeptName(code){
@@ -1863,7 +1920,7 @@ function getDeptName(code){
 async function initMeta(){
   if(sb){
     try{
-      const {data:orgs} = await sb.from('organizations').select('org_code,org_name,parent_org_code,company_code,org_level,is_active').eq('is_active',true).order('company_code').order('org_level').order('org_name');
+      var orgs = null; try{ var _t = await sb.from('organizations').select('org_code,org_name,parent_org_code,company_code,org_level,is_active').eq('is_active',true).order('company_code').order('org_level').order('org_name'); orgs = _t ? _t.data : null; }catch(_e){}
       ORGS = orgs || [];
     }catch(e){
       ORGS = [];
@@ -1896,15 +1953,15 @@ async function initMeta(){
 
   // 카테고리 셀렉트 채우기
   ['m-cat','f-my-cat','f-iss-cat'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    const hasAll=id!=='m-cat';
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id!=='m-cat';
     el.innerHTML=(hasAll?'<option value="">전체</option>':'')+CATS.map(c=>`<option value="${c.category_code}">${c.icon} ${c.category_name}</option>`).join('');
   });
 
   // 계열사 셀렉트
   ['f-iss-co','a-co'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    const hasAll=id!=='a-co';
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id!=='a-co';
     el.innerHTML=(hasAll?'<option value="">전체</option>':'')+COS.map(c=>`<option value="${c.company_code}">${c.company_name}</option>`).join('');
   });
 
@@ -1912,18 +1969,18 @@ async function initMeta(){
 
   // 지속 이슈용 셀렉트
   ['f-im-co','im-company'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
-    const hasAll=id==='f-im-co';
+    var el=document.getElementById(id);if(!el)return;
+    var hasAll=id==='f-im-co';
     el.innerHTML=(hasAll?'<option value="">전체</option>':'')+COS.map(c=>`<option value="${c.company_code}">${c.company_name}</option>`).join('');
   });
   ['im-category'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
+    var el=document.getElementById(id);if(!el)return;
     el.innerHTML=CATS.map(c=>`<option value="${c.category_code}">${c.icon} ${c.category_name}</option>`).join('');
   });
   // 주차 옵션
-  const wsel=document.getElementById('f-mt-week');
+  var wsel=document.getElementById('f-mt-week');
   if(wsel){
-    const now=new Date();
+    var now=new Date();
     // 해당 주차의 월요일 날짜 계산
     function getMondayOfWeek(d){
       var day=d.getDay(); // 0=일,1=월...
@@ -1992,18 +2049,90 @@ function getManagedOrgCodes(rootOrgCode){
 // ══════════════════════════════════════════════
 // 내 업무일지
 // ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 기한 도래 업무 팝업
+// ══════════════════════════════════════════════
+async function checkDueTasks(){
+  if(!sb || !CU) return;
+  try{
+    var todayStr = today();
+    var _dueRes = await sb.from('daily_reports')
+      .select('id,report_title,content_original,due_date,status')
+      .eq('author_user_id', CU.user_id)
+      .lte('due_date', todayStr)
+      .neq('status', '완료')
+      .order('due_date', {ascending:true})
+      .limit(10);
+    var dueData = _dueRes ? _dueRes.data : null;
+    if(!dueData || !dueData.length) return;
+
+    var itemsHtml = '';
+    for(var di=0; di<dueData.length; di++){
+      var dr = dueData[di];
+      var isOverdue = dr.due_date < todayStr;
+      var dLabel = isOverdue ? '기한 초과' : '오늘 기한';
+      var dColor = isOverdue ? '#b91a3d' : '#c8860a';
+      var shortTxt = (dr.content_original||'').substring(0,60) + ((dr.content_original||'').length>60?'...':'');
+      itemsHtml += '<div style="padding:10px 0;border-bottom:1px solid #f0f5f3;display:flex;gap:10px">';
+      itemsHtml += '<div style="flex:1">';
+      if(dr.report_title) itemsHtml += '<div style="font-weight:700;font-size:13px;color:#0f1f17">'+esc(dr.report_title)+'</div>';
+      itemsHtml += '<div style="font-size:12px;color:#5a7a6e;margin-top:2px">'+esc(shortTxt)+'</div>';
+      itemsHtml += '</div>';
+      itemsHtml += '<div style="text-align:right;flex-shrink:0">';
+      itemsHtml += '<div style="font-size:11px;font-weight:700;color:'+dColor+'">'+dLabel+'</div>';
+      itemsHtml += '<div style="font-size:10px;color:#8aaa9e">'+dr.due_date+'</div>';
+      itemsHtml += '</div></div>';
+    }
+
+    var popup = document.getElementById('due-popup');
+    if(!popup){
+      popup = document.createElement('div');
+      popup.id = 'due-popup';
+      popup.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;box-shadow:0 8px 40px rgba(0,0,0,.18);width:min(480px,90vw);z-index:9999;overflow:hidden;';
+      document.body.appendChild(popup);
+    }
+
+    var ph = '<div style="background:#1a2a3a;padding:18px 20px;display:flex;align-items:center;justify-content:space-between">';
+    ph += '<div><div style="font-size:15px;font-weight:700;color:#fff">오늘 기한 업무</div>';
+    ph += '<div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px">확인 후 완료 처리해 주세요</div></div>';
+    ph += '<button id="dpop-x" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:6px;padding:4px 10px;cursor:pointer">닫기</button>';
+    ph += '</div>';
+    ph += '<div style="padding:4px 20px 16px;max-height:60vh;overflow-y:auto">'+itemsHtml+'</div>';
+    ph += '<div style="padding:12px 20px;border-top:1px solid #f0f5f3;display:flex;gap:8px;justify-content:flex-end">';
+    ph += '<button id="dpop-later" class="btn btn-ghost">나중에</button>';
+    ph += '<button id="dpop-go" class="btn btn-primary">업무일지 보기</button>';
+    ph += '</div>';
+    popup.innerHTML = ph;
+
+    document.getElementById('dpop-x').onclick = function(){ popup.style.display='none'; };
+    document.getElementById('dpop-later').onclick = function(){ popup.style.display='none'; };
+    document.getElementById('dpop-go').onclick = function(){ go('my'); popup.style.display='none'; };
+    popup.style.display = 'block';
+  }catch(e){ console.error('checkDueTasks error', e); }
+}
+
 async function loadMy(){
-  const date=document.getElementById('f-my-date').value;
-  const cat=document.getElementById('f-my-cat').value;
-  const st=document.getElementById('f-my-status').value;
-  let rpts=[];
-  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.author_id===CU.id); }
+  var _dfEl = document.getElementById('f-my-date-from'); var dateFrom = _dfEl ? _dfEl.value : '';
+  var _dtEl = document.getElementById('f-my-date-to'); var dateTo = _dtEl ? _dtEl.value : '';
+  var cat = document.getElementById('f-my-cat').value;
+  var st  = document.getElementById('f-my-status').value;
+  var rpts = [];
+  if(!sb){ rpts = DEMO_REPORTS().filter(function(r){ return r.author_id===CU.id; }); }
   else{
     try{
-      let q=sb.from('daily_reports').select('*').eq('author_user_id',CU.user_id || CU.id).order('created_at',{ascending:false});
-      if(date)q=q.eq('report_date',date);if(cat)q=q.eq('category_code',cat);if(st)q=q.eq('status',st);
-      const{data}=await q;if(data)rpts=data;
-    }catch(e){}
+      var q = sb.from('daily_reports').select('*')
+        .eq('author_user_id', CU.user_id || CU.id)
+        .order('report_date', {ascending:false})
+        .order('created_at', {ascending:false});
+      if(dateFrom) q = q.gte('report_date', dateFrom);
+      if(dateTo)   q = q.lte('report_date', dateTo);
+      if(!dateFrom && !dateTo) q = q.eq('report_date', today()); // 기본: 오늘
+      if(cat) q = q.eq('category_code', cat);
+      if(st)  q = q.eq('status', st);
+      var res = await q;
+      if(res.data) rpts = res.data;
+    }catch(e){ console.error('loadMy 오류', e); toast('업무 목록 조회 오류','err'); }
   }
   renderMy(rpts);
 }
@@ -2014,32 +2143,50 @@ function renderMy(rpts){
   document.getElementById('k-done').textContent=rpts.filter(r=>r.status==='완료').length;
   document.getElementById('k-wip').textContent=rpts.filter(r=>r.status!=='완료').length;
   document.getElementById('k-issue').textContent=rpts.filter(r=>r.is_issue).length;
-  const tb=document.getElementById('my-body');
+  var tb=document.getElementById('my-body');
   if(!rpts.length){tb.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="empty-ico">📝</div><div class="empty-msg">등록된 업무가 없습니다</div></div></td></tr>`;return;}
-  tb.innerHTML=rpts.map(r=>`
-    <tr>
-      <td style="font-family:'JetBrains Mono';font-size:11px;color:var(--txt-m)">${r.report_date}</td>
-      <td><span class="cat">${catName(r.category_code)}</span></td>
-      <td class="cc">
-        ${esc(r.content_original)}
-        ${r._images && r._images.length ? renderRptImgThumbs(r._images, 'tbl') : ''}
-      </td>
-      <td class="${pc(r.priority_original)}"><span class="stars">${'★'.repeat(r.priority_original||1)}</span></td>
-      <td><span class="bdg ${stBdg(r.status)}">${r.status}</span></td>
-      <td>
-        ${r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':''}
-        ${r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':''}
-        ${r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':''}
-        ${(!r.is_issue && !r.customer_related && !r.decision_required)?'-':''}
-      </td>
-      <td>
-        ${r.is_urgent?'<span class="bdg bdg-urgent">🚨 긴급</span>':''}
-        <span class="bdg bdg-stage">${stageLabel(r.stage)}</span>
-        ${r.is_escalated_to_meeting?'<span class="bdg" style="background:#FEF3C7;color:#B45309">회의포함</span>':''}
-      </td>
-      <td><button class="btn btn-ghost btn-xs" onclick="openModal(${r.id})">수정</button></td>
-    </tr>
-  `).join('');
+  tb.innerHTML=rpts.map(function(r){
+    return '<tr>'
+      +'<td style="font-family:monospace;font-size:11px;color:var(--txt-m)">'+r.report_date+'</td>'
+      +'<td><span class="cat">'+catName(r.category_code)+'</span></td>'
+      +'<td class="cc"><div style="font-weight:700;font-size:13px;margin-bottom:2px">'+(r.report_title?esc(r.report_title):'')+'</div>'+esc(r.content_original)+'</td>'
+      +'<td class="'+pc(r.priority_original)+'"><span class="stars">'+'★'.repeat(r.priority_original||1)+'</span></td>'
+      +'<td><span class="bdg '+stBdg(r.status)+'">'+r.status+'</span></td>'
+      +'<td>'
+        +(r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        +(r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':'')
+        +(r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        +(!r.is_issue&&!r.customer_related&&!r.decision_required?'-':'')
+      +'</td>'
+      +'<td><span class="bdg bdg-stage">'+stageLabel(r.stage)+'</span>'+(r.is_escalated_to_meeting?'<span class="bdg" style="background:#FEF3C7;color:#B45309">회의포함</span>':'')+'</td>'
+      +'<td>'+(r.stage==='submitted'?'<button class="btn btn-ghost btn-xs" onclick="openModal('+r.id+')">수정</button>':'<span style="font-size:10px;color:var(--txt-m)">검토중</span>')+'</td>'
+    +'</tr>';
+  }).join('');
+
+  // 모바일 카드 뷰
+  var cardList = document.getElementById('my-card-list');
+  if(cardList){
+    cardList.innerHTML = rpts.map(function(r){
+      return '<div class="my-card">'
+        +'<div class="my-card-hdr">'
+        +'<div>'
+        +(r.report_title?'<div class="my-card-title">'+esc(r.report_title)+'</div>':'')
+        +'<div style="font-size:11px;color:var(--txt-m);margin-top:2px">'+r.report_date+'</div>'
+        +'</div>'
+        +(r.stage==='submitted'?'<button class="btn btn-ghost btn-xs" onclick="openModal('+r.id+')">수정</button>':'<span class="bdg bdg-stage">'+stageLabel(r.stage)+'</span>')
+        +'</div>'
+        +'<div class="my-card-meta">'
+        +'<span class="cat">'+catName(r.category_code)+'</span>'
+        +'<span class="'+pc(r.priority_original)+' stars">'+'★'.repeat(r.priority_original||1)+'</span>'
+        +'<span class="bdg '+stBdg(r.status)+'">'+r.status+'</span>'
+        +(r.is_issue?'<span class="bdg bdg-issue">⚠ 이슈</span>':'')
+        +(r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+        +'</div>'
+        +'<div class="my-card-content">'+esc(r.content_original)+'</div>'
+        +(r.next_plan?'<div class="my-card-next">▶ 차주 계획: '+esc(r.next_plan)+'</div>':'')
+        +'</div>';
+    }).join('');
+  }
 }
 
 // ══════════════════════════════════════════════
@@ -2047,7 +2194,7 @@ function renderMy(rpts){
 // ══════════════════════════════════════════════
 
 async function loadReview(){
-  const date=document.getElementById('f-rv-date').value;
+  var date=document.getElementById('f-rv-date').value;
 
   // 내 오늘 업무 요약 표시
   var myRpts = [];
@@ -2081,10 +2228,10 @@ async function loadReview(){
     sumEl.style.display='none';
   }
 
-  let rpts=[];
+  var rpts=[];
   reviewFeedbackMap = {};
 
-  let targetStage = 'submitted';
+  var targetStage = 'submitted';
   if(CU.position_level >= 4) targetStage = 'dept_approved';
   else if(CU.position_level >= 3) targetStage = 'team_approved';
 
@@ -2093,7 +2240,7 @@ async function loadReview(){
   }
   else{
     try{
-      let q = sb.from('daily_reports')
+      var q = sb.from('daily_reports')
         .select('*')
         .eq('report_date',date)
         .order('priority_original',{ascending:false})
@@ -2115,7 +2262,7 @@ async function loadReview(){
         }
       }
 
-      const {data, error} = await q;
+      var {data, error} = await q;
       if(error){
         console.error('하위 보고 검토 조회 실패', error);
         toast('하위 보고 조회 실패: ' + (error.message || '권한 또는 쿼리 오류'), 'err');
@@ -2126,7 +2273,7 @@ async function loadReview(){
       // 피드백 로그 로드
       if(rpts.length){
         var ids = rpts.map(function(r){ return r.id; });
-        const {data:logs, error:logErr} = await sb.from('escalation_logs')
+        var {data:logs, error:logErr} = await sb.from('escalation_logs')
           .select('report_id, action, acted_by_name, note, created_at')
           .in('report_id', ids)
           .eq('action', 'feedback')
@@ -2145,11 +2292,11 @@ async function loadReview(){
     }
   }
 
-  const cnt=rpts.length;
-  const bdg=document.getElementById('bdg-review');
+  var cnt=rpts.length;
+  var bdg=document.getElementById('bdg-review');
   bdg.textContent=cnt; bdg.style.display=cnt?'inline-block':'none';
 
-  const el=document.getElementById('review-body');
+  var el=document.getElementById('review-body');
   if(!rpts.length){
     var hint = '';
     if(CU.position_level === 2){
@@ -2201,7 +2348,9 @@ async function loadReview(){
         + '</div></div>'
         + '<div class="review-orig">'
         + '<div class="review-orig-lbl">원문</div>'
-        + '<div style="font-size:13px;color:var(--txt-h);line-height:1.65">'+esc(r.content_original)+'</div>'
+        + (r.report_title?'<div style="font-size:14px;font-weight:800;color:var(--txt-h);margin-bottom:4px">'+esc(r.report_title)+'</div>':'')
+        + '<div style="font-size:13px;color:var(--txt-b);line-height:1.65">'+esc(r.content_original)+'</div>'
+        + (r.next_plan?'<div style="font-size:12px;color:var(--z-green-d);background:var(--z-green-s);padding:6px 10px;border-radius:6px;margin-top:6px">▶ 차주 계획: '+esc(r.next_plan)+'</div>':'')
         + (r.is_issue?'<div class="rpt-issue-box">⚠ '+esc(r.issue_content||'')+'</div>':'')
         + '</div>'
         + '<div class="review-edit">'
@@ -2246,21 +2395,21 @@ async function loadReview(){
 // 이슈 현황
 // ══════════════════════════════════════════════
 async function loadIssues(){
-  const co=document.getElementById('f-iss-co').value;
-  const cat=document.getElementById('f-iss-cat').value;
-  let rpts=[];
+  var co=document.getElementById('f-iss-co').value;
+  var cat=document.getElementById('f-iss-cat').value;
+  var rpts=[];
   if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_issue); }
   else{
     try{
-      let q=sb.from('daily_reports').select('*').eq('is_issue',true);
+      var q=sb.from('daily_reports').select('*').eq('is_issue',true);
       if(co)q=q.eq('company_code',co);if(cat)q=q.eq('category_code',cat);
       const{data}=await q.order('priority_original',{ascending:false}).order('report_date',{ascending:false});
       if(data)rpts=data;
     }catch(e){}
   }
-  const el=document.getElementById('issues-body');
+  var el=document.getElementById('issues-body');
   if(!rpts.length){el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">등록된 이슈가 없습니다</div></div>`;return;}
-  const bdg=document.getElementById('bdg-issue');
+  var bdg=document.getElementById('bdg-issue');
   bdg.textContent=rpts.length;bdg.style.display=rpts.length?'inline-block':'none';
   el.innerHTML=rpts.map(r=>`
     <div class="issue-row p${r.priority_original||1}">
@@ -2279,7 +2428,7 @@ async function loadIssues(){
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:12px;font-weight:600;color:var(--txt-s)">${r.author_name||'-'}</div>
-        <div style="font-size:10px;color:var(--txt-m);font-family:'JetBrains Mono';margin-top:2px">${r.report_date}</div>
+        <div style="font-size:10px;color:var(--txt-m);font-family:monospace;margin-top:2px">${r.report_date}</div>
       </div>
     </div>
   `).join('');
@@ -2289,8 +2438,8 @@ async function loadIssues(){
 // 부서 집약
 // ══════════════════════════════════════════════
 async function loadDept(){
-  const date=document.getElementById('f-dp-date').value;
-  let rpts=[];
+  var date=document.getElementById('f-dp-date').value;
+  var rpts=[];
   if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
   else{
     try{
@@ -2310,7 +2459,7 @@ function renderGrouped(el, rpts, label){
     if(aTop!==bTop) return bTop-aTop;
     return (b.priority_original||1)-(a.priority_original||1);
   });
-  const grouped={};
+  var grouped={};
   rpts.forEach(r=>{ if(!grouped[r.category_code])grouped[r.category_code]=[]; grouped[r.category_code].push(r); });
   el.innerHTML=Object.entries(grouped).map(([code,items])=>`
     <div class="cat-section">
@@ -2333,8 +2482,8 @@ function renderGrouped(el, rpts, label){
 }
 
 function rptItemHTML(r){
-  const displayContent = r.content_exec || r.content_dept || r.content_team || r.content_original;
-  const isEdited = r.content_exec || r.content_dept || r.content_team;
+  var displayContent = r.content_exec || r.content_dept || r.content_team || r.content_original;
+  var isEdited = r.content_exec || r.content_dept || r.content_team;
   return `
     <div class="rpt-item ${r.is_urgent?'urgent-item':''}">
       <div class="rpt-pri">
@@ -2423,17 +2572,17 @@ function togglePresentationMode(){
 // 지속 이슈
 // ══════════════════════════════════════════════
 async function loadIssueMaster(){
-  const co=document.getElementById('f-im-co').value;
-  const st=document.getElementById('f-im-status').value;
-  let items=[];
+  var co=document.getElementById('f-im-co').value;
+  var st=document.getElementById('f-im-status').value;
+  var items=[];
   if(!sb){
     items=[];
   } else {
     try{
-      let q=sb.from('issue_master').select('*').order('priority_level',{ascending:false}).order('updated_at',{ascending:false});
+      var q=sb.from('issue_master').select('*').order('priority_level',{ascending:false}).order('updated_at',{ascending:false});
       if(co) q=q.eq('company_code',co);
       if(st) q=q.eq('issue_status',st);
-      const {data}=await q;
+      var {data}=await q;
       if(data) items=data;
     }catch(e){ console.error(e); toast('지속 이슈 조회 실패','err'); }
   }
@@ -2441,10 +2590,10 @@ async function loadIssueMaster(){
   document.getElementById('im-monitor').textContent=items.filter(i=>i.issue_status==='monitoring').length;
   document.getElementById('im-resolved').textContent=items.filter(i=>i.issue_status==='resolved').length;
   document.getElementById('im-decision').textContent=items.filter(i=>i.decision_required).length;
-  const bdg=document.getElementById('bdg-issue-master');
+  var bdg=document.getElementById('bdg-issue-master');
   if(bdg){ bdg.textContent=items.filter(i=>i.issue_status==='open').length; bdg.style.display=items.length?'inline-block':'none'; }
 
-  const el=document.getElementById('issue-master-body');
+  var el=document.getElementById('issue-master-body');
   if(!items.length){
     el.innerHTML=`<div class="empty"><div class="empty-ico">📌</div><div class="empty-msg">등록된 지속 이슈가 없습니다</div></div>`;
     return;
@@ -2469,7 +2618,7 @@ async function loadIssueMaster(){
       </div>
       <div style="text-align:right;flex-shrink:0;min-width:92px">
         <div style="font-size:11px;font-weight:600;color:var(--txt-s)">${i.owner_name||'-'}</div>
-        <div style="font-size:10px;color:var(--txt-m);font-family:'JetBrains Mono';margin-top:2px">${i.start_date||''}</div>
+        <div style="font-size:10px;color:var(--txt-m);font-family:monospace;margin-top:2px">${i.start_date||''}</div>
       </div>
     </div>
   `).join('');
@@ -2690,10 +2839,11 @@ function closeIssueMasterModal(){
   document.getElementById('issue-master-modal').classList.remove('open');
 }
 async function promoteToIssueMaster(reportId){
-  let report=null;
+  var report=null;
   if(!sb){ openIssueMasterModal({}); return; }
   try{
-    const {data} = await sb.from('daily_reports').select('*').eq('id',reportId).single();
+    var _res_ = await sb.from('daily_reports').select('*').eq('id',reportId).single();
+      var data = _res_ ? _res_.data : null;
     report=data;
   }catch(e){}
   openIssueMasterModal(report||{});
@@ -2703,7 +2853,7 @@ async function saveIssueMaster(){
   var isEdit = sourceId && sourceId.startsWith('edit:');
   var editId = isEdit ? parseInt(sourceId.replace('edit:','')) : null;
 
-  const payload = {
+  var payload = {
     issue_title: document.getElementById('im-title').value.trim(),
     issue_category: document.getElementById('im-category').value,
     company_code: document.getElementById('im-company').value,
@@ -2729,12 +2879,12 @@ async function saveIssueMaster(){
   try{
     if(isEdit){
       // 수정 모드
-      const {error} = await sb.from('issue_master').update(payload).eq('id', editId);
+      var {error} = await sb.from('issue_master').update(payload).eq('id', editId);
       if(error) throw error;
       toast('이슈 수정 완료','ok');
     } else {
       // 신규 등록
-      const {data, error} = await sb.from('issue_master').insert([payload]).select();
+      var {data, error} = await sb.from('issue_master').insert([payload]).select();
       if(error) throw error;
       if(sourceId && !isEdit && data && data[0]){
         await sb.from('daily_reports').update({issue_master_id: data[0].id}).eq('id', parseInt(sourceId));
@@ -2753,6 +2903,73 @@ async function saveIssueMaster(){
 // ══════════════════════════════════════════════
 // 전사 회의 뷰 (핵심)
 // ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 전사회의 카테고리별 섹션 자동 구성
+// ══════════════════════════════════════════════
+function renderMeetingSections(rpts){
+  // 카테고리 → 전사회의 섹션 매핑
+  var sectionMap = {
+    'NEW_BIZ':     { label:'📊 신규 사업기회', icon:'📊', color:'#1D4ED8', bg:'#EFF6FF' },
+    'RENEW':       { label:'🔄 재계약 관리',   icon:'🔄', color:'#065f46', bg:'#D1FAE5' },
+    'LABOR':       { label:'⚖️ 노무 이슈',     icon:'⚖️', color:'#92400e', bg:'#FEF3C7' },
+    'SAFETY':      { label:'🦺 안전보건',      icon:'🦺', color:'#7c3aed', bg:'#EDE9FE' },
+    'RISK':        { label:'⚠️ 리스크 관리',   icon:'⚠️', color:'#b91a3d', bg:'#fce4eb' },
+    'STRATEGY':    { label:'🎯 전략/기획',     icon:'🎯', color:'#1a2a3a', bg:'#f0f5f3' },
+    'HR':          { label:'👥 인사/총무/교육',icon:'👥', color:'#5b21b6', bg:'#F5F3FF' },
+    'IT':          { label:'💻 IT/DX/시스템',  icon:'💻', color:'#0369a1', bg:'#E0F2FE' },
+    'ADMIN':       { label:'📋 일반 행정',     icon:'📋', color:'#374151', bg:'#F9FAFB' },
+  };
+
+  var secEl = document.getElementById('meeting-sections');
+  if(!secEl) return;
+
+  if(!rpts || !rpts.length){ secEl.style.display='none'; return; }
+
+  // 카테고리별 그룹핑
+  var grouped = {};
+  rpts.forEach(function(r){
+    var cat = r.category_code || 'ADMIN';
+    if(!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(r);
+  });
+
+  var sectionsHtml = '';
+  Object.keys(grouped).forEach(function(cat){
+    var sec = sectionMap[cat] || { label:'📋 '+catName(cat), icon:'📋', color:'#374151', bg:'#F9FAFB' };
+    var items = grouped[cat];
+    sectionsHtml += '<div class="meeting-section" style="margin-bottom:16px">'
+      +'<div class="meeting-sec-hdr" style="background:'+sec.bg+';border-left:4px solid '+sec.color+';padding:10px 16px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">'
+      +'<span style="font-size:14px;font-weight:700;color:'+sec.color+'">'+sec.label+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+sec.color+'">'+items.length+'건</span>'
+      +'</div>'
+      +'<div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">';
+
+    items.forEach(function(r){
+      sectionsHtml += '<div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;background:#fff">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
+        +'<div style="flex:1">'
+        +(r.report_title?'<div style="font-size:13px;font-weight:700;color:#0f1f17;margin-bottom:4px">'+esc(r.report_title)+'</div>':'')
+        +'<div style="font-size:12px;color:#374151;line-height:1.6">'+esc(r.content_original)+'</div>'
+        +(r.next_plan?'<div style="font-size:11px;color:#065f46;background:#D1FAE5;padding:4px 8px;border-radius:4px;margin-top:4px">▶ 차주: '+esc(r.next_plan)+'</div>':'')
+        +(r.is_issue?'<div style="font-size:11px;color:#b91a3d;background:#fce4eb;padding:4px 8px;border-radius:4px;margin-top:4px">⚠ '+esc(r.issue_content||'')+'</div>':'')
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0;min-width:80px">'
+        +'<div style="font-size:11px;font-weight:600;color:#5a7a6e">'+esc(r.author_name||'-')+'</div>'
+        +(r.due_date?'<div style="font-size:10px;color:#8aaa9e;margin-top:2px">기한 '+r.due_date+'</div>':'')
+        +(r.decision_required?'<div style="font-size:10px;color:#C2410C;font-weight:700;margin-top:2px">의사결정 필요</div>':'')
+        +'</div>'
+        +'</div>'
+        +'</div>';
+    });
+
+    sectionsHtml += '</div></div>';
+  });
+
+  secEl.innerHTML = sectionsHtml;
+  secEl.style.display = 'block';
+}
+
 function renderMeetingIssues(issues){
   var sec = document.getElementById('meeting-issues-section');
   var body = document.getElementById('meeting-issues-body');
@@ -2795,16 +3012,16 @@ function renderMeetingIssues(issues){
 }
 
 async function loadMeeting(){
-  const weekVal=document.getElementById('f-mt-week').value;
+  var weekVal=document.getElementById('f-mt-week').value;
   if(!weekVal){toast('주차를 선택하세요','err');return;}
   showLd(true);
   meetingData={};
-  let rpts=[];
-  let meetingIssues=[]; // 전사회의 포함 이슈
+  var rpts=[];
+  var meetingIssues=[]; // 전사회의 포함 이슈
   if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
   else{
     try{
-      const [year,week]=weekVal.split('-').map(Number);
+      var [year,week]=weekVal.split('-').map(Number);
       // 일 단위 보고
       const{data}=await sb.from('daily_reports').select('*').eq('week_number',week).eq('year_num',year).eq('is_escalated_to_meeting',true).order('company_code').order('category_code').order('priority_original',{ascending:false});
       if(data)rpts=data;
@@ -2822,13 +3039,13 @@ async function loadMeeting(){
   rpts.forEach(r=>{ if(meetingData[r.company_code]) meetingData[r.company_code].push(r); });
 
   // 긴급 배너
-  const urgents=rpts.filter(r=>r.is_urgent);
-  const banner=document.getElementById('urgent-banner');
+  var urgents=rpts.filter(r=>r.is_urgent);
+  var banner=document.getElementById('urgent-banner');
   if(urgents.length){ banner.style.display='flex'; document.getElementById('urgent-cnt').textContent=urgents.length; }
   else banner.style.display='none';
 
   // 탭 생성 (보고 없는 계열사는 흐리게)
-  const tabList=document.getElementById('co-tab-list');
+  var tabList=document.getElementById('co-tab-list');
   tabList.innerHTML=COS.map(c=>{
     var _md=meetingData[c.company_code]; var cnt=_md?_md.length:0;
     var isEmpty = cnt===0;
@@ -2840,6 +3057,8 @@ async function loadMeeting(){
 
   // 전사회의 이슈 섹션 렌더링 (전체 공통)
   renderMeetingIssues(meetingIssues);
+  // 카테고리별 보고 섹션 자동 구성
+  renderMeetingSections(rpts);
 
   // 빈 상태/데이터 상태 전환
   var emptyEl = document.getElementById('meeting-empty');
@@ -2857,7 +3076,7 @@ async function loadMeeting(){
     if(emptyEl) emptyEl.style.display='none';
     if(mainEl) mainEl.style.display='grid';
     // 첫 번째 보고 있는 계열사 자동 선택
-    const firstCo=COS.find(c=>(meetingData[c.company_code]||[]).length>0);
+    var firstCo=COS.find(c=>(meetingData[c.company_code]||[]).length>0);
     showCo(firstCo&&firstCo.company_code?firstCo.company_code:COS[0].company_code);
   }
 
@@ -2876,10 +3095,10 @@ async function loadMeeting(){
 function showCo(code){
   activeCo=code;
   document.querySelectorAll('.co-tab').forEach(t=>{ t.classList.toggle('on',t.dataset.co===code); });
-  const rpts=meetingData[code]||[];
-  const co=COS.find(c=>c.company_code===code);
-  const coName2=co&&co.company_name?co.company_name:code;
-  const el=document.getElementById('co-content');
+  var rpts=meetingData[code]||[];
+  var co=COS.find(c=>c.company_code===code);
+  var coName2=co&&co.company_name?co.company_name:code;
+  var el=document.getElementById('co-content');
 
   if(!rpts.length){
     el.innerHTML=`
@@ -2894,10 +3113,10 @@ function showCo(code){
     return;
   }
 
-  const grouped={};
+  var grouped={};
   rpts.forEach(r=>{ if(!grouped[r.category_code])grouped[r.category_code]=[]; grouped[r.category_code].push(r); });
-  const totalIssues=rpts.filter(r=>r.is_issue).length;
-  const catCount=Object.keys(grouped).length;
+  var totalIssues=rpts.filter(r=>r.is_issue).length;
+  var catCount=Object.keys(grouped).length;
 
   el.innerHTML=`
     <div class="co-content-hdr">
@@ -3255,6 +3474,9 @@ async function saveReport(keepOpen){
     if(isIssue && !issueContent){ toast((i+1)+'번 이슈 내용을 입력하세요','err'); valid=false; break; }
 
     var weekInfo = getWeekInfo(date);
+    var titleEl = document.getElementById('mtitle-'+idx);
+    var nextEl = document.getElementById('mnext-'+idx);
+    var dueEl = document.getElementById('mdue-'+idx);
     payloads.push({
       report_date: date,
       year_num: weekInfo.year_num,
@@ -3265,8 +3487,11 @@ async function saveReport(keepOpen){
       author_position_level: CU.position_level,
       company_code: CU.company_code,
       org_code: currentOrgCode(),
+      report_title: titleEl ? titleEl.value.trim() : null,
       category_code: cat,
       content_original: content,
+      next_plan: nextEl ? nextEl.value.trim() : null,
+      due_date: dueEl && dueEl.value ? dueEl.value : null,
       priority_original: getItemPriority(idx),
       status: getItemStatus(idx),
       is_issue: isIssue,
@@ -3330,13 +3555,13 @@ async function saveReport(keepOpen){
 async function regUser(){
   if(sb){ toast('운영용 계정 생성은 Supabase Auth에서 먼저 생성 후 users_profile과 연결하는 방식으로 운영하세요.','info'); return; }
 
-  const name=document.getElementById('a-name').value.trim();
-  const co=document.getElementById('a-co').value;
-  const dept=document.getElementById('a-dept').value.trim();
-  const pos=document.getElementById('a-pos').value.trim();
-  const lv=parseInt(document.getElementById('a-lv').value);
-  const lid=document.getElementById('a-lid').value.trim();
-  const pw=document.getElementById('a-pw').value;
+  var name=document.getElementById('a-name').value.trim();
+  var co=document.getElementById('a-co').value;
+  var dept=document.getElementById('a-dept').value.trim();
+  var pos=document.getElementById('a-pos').value.trim();
+  var lv=parseInt(document.getElementById('a-lv').value);
+  var lid=document.getElementById('a-lid').value.trim();
+  var pw=document.getElementById('a-pw').value;
   if(!name||!co||!lid||!pw){toast('필수 항목을 입력하세요','err');return;}
   if(!sb){toast('등록됨 (데모)','ok');return;}
   showLd(true);
@@ -3346,7 +3571,7 @@ async function regUser(){
 }
 
 async function loadUsers(){
-  const tb=document.getElementById('user-body');
+  var tb=document.getElementById('user-body');
   if(!sb){ tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--txt-m)">Supabase 연결 후 사용자 목록이 표시됩니다</td></tr>'; return; }
   try{
     const{data}=await sb.from('users_profile').select('*').order('company_code').order('position_level',{ascending:false});
@@ -3424,8 +3649,8 @@ async function saveFeedback(reportId){
 }
 function showLd(v){ document.getElementById('ld').classList.toggle('show',v); }
 function toast(msg,type='info'){
-  const c=document.getElementById('toasts');
-  const t=document.createElement('div');
+  var c=document.getElementById('toasts');
+  var t=document.createElement('div');
   t.className=`toast toast-${type==='ok'?'ok':type==='err'?'err':'info'}`;
   t.textContent=msg; c.appendChild(t);
   setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(40px)';t.style.transition='all .3s';},2500);
@@ -3436,9 +3661,9 @@ function toast(msg,type='info'){
 // 모바일 사이드바 / 네비
 // ══════════════════════════════════════════════
 function toggleSdb(){
-  const sdb=document.getElementById('sdb');
-  const ov=document.getElementById('sdb-overlay');
-  const isOpen=sdb.classList.contains('open');
+  var sdb=document.getElementById('sdb');
+  var ov=document.getElementById('sdb-overlay');
+  var isOpen=sdb.classList.contains('open');
   sdb.classList.toggle('open',!isOpen);
   ov.classList.toggle('show',!isOpen);
 }
