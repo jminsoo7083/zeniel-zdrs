@@ -1154,6 +1154,9 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
       <div class="nav on" data-tab="my" onclick="go('my')">
         <span class="ico">✏</span>내 업무일지
       </div>
+      <div class="nav" data-tab="weekly" onclick="go('weekly')">
+        <span class="ico">📋</span>주간 업무보고
+      </div>
     </div>
 
     <!-- 검토 (팀장↑) -->
@@ -1255,7 +1258,31 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
       </div>
     </div>
 
-    <!-- ② 하위 보고 검토 (팀장↑) -->
+    <!-- ② 주간 업무보고 -->
+    <div class="panel" id="panel-weekly">
+      <div class="pg-hdr">
+        <div>
+          <div class="pg-title">주간 업무보고</div>
+          <div class="pg-sub">이번 주 업무를 정리하고 차주 계획을 작성합니다</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <select id="wk-sel" onchange="loadWeeklyDetail()" style="font-size:13px;padding:6px 10px;border:1px solid var(--border);border-radius:8px"></select>
+          <button class="btn btn-primary" onclick="openWeeklyModal()">＋ 주간보고 작성</button>
+        </div>
+      </div>
+
+      <!-- 작성된 주간보고 목록 -->
+      <div id="weekly-list-wrap">
+        <div class="empty" id="weekly-empty" style="display:none">
+          <div class="empty-ico">📋</div>
+          <div class="empty-msg">이번 주 주간보고가 없습니다</div>
+          <button class="btn btn-primary" style="margin-top:12px" onclick="openWeeklyModal()">주간보고 작성하기</button>
+        </div>
+        <div id="weekly-detail"></div>
+      </div>
+    </div>
+
+    <!-- ③ 하위 보고 검토 (팀장↑) -->
     <div class="panel" id="panel-review">
       <div class="pg-hdr">
         <div>
@@ -1459,6 +1486,46 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   </main>
 </div>
 
+<!-- 주간보고 작성 모달 -->
+  <div class="modal-bg" id="weekly-modal-bg" style="display:none" onclick="closeWeeklyModal(event)">
+    <div class="modal" style="max-width:700px;width:95vw" onclick="event.stopPropagation()">
+      <div class="modal-hdr">
+        <div class="modal-ttl">📋 주간 업무보고 작성</div>
+        <button class="modal-close" onclick="closeWeeklyModal()">✕</button>
+      </div>
+      <div class="modal-body" style="padding:20px;max-height:80vh;overflow-y:auto">
+        <div class="fg2" style="margin-bottom:12px">
+          <label>대상 주차</label>
+          <select id="wk-modal-week" onchange="loadWeeklyDailyList()" style="width:100%"></select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label style="font-weight:700;font-size:13px;color:var(--txt-h);display:block;margin-bottom:8px">
+            📌 이번 주 업무 선택 <span style="font-weight:400;color:var(--txt-m);font-size:11px">포함할 업무를 체크하세요</span>
+          </label>
+          <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:260px;overflow-y:auto;background:#fafafa">
+            <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 해당 주 업무가 표시됩니다</div>
+          </div>
+        </div>
+        <div class="fg2" style="margin-bottom:12px">
+          <label>이번 주 종합 요약 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
+          <textarea id="wk-summary" placeholder="이번 주 주요 성과, 진행 현황을 자유롭게 정리하세요" style="min-height:80px"></textarea>
+        </div>
+        <div class="fg2" style="margin-bottom:12px">
+          <label>차주 계획 <span style="color:#e53e3e;font-size:11px">*</span></label>
+          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요" style="min-height:100px"></textarea>
+        </div>
+        <div class="fg2" style="margin-bottom:4px">
+          <label>의사결정 / 상위 요청 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
+          <textarea id="wk-decision" placeholder="상위 판단이 필요한 사항이나 지원 요청 내용을 작성하세요" style="min-height:70px"></textarea>
+        </div>
+      </div>
+      <div class="modal-ftr">
+        <button class="btn btn-ghost" onclick="closeWeeklyModal()">취소</button>
+        <button class="btn btn-primary" onclick="saveWeeklyReport()">💾 주간보고 저장</button>
+      </div>
+    </div>
+  </div>
+
 <!-- 업무 등록/수정 모달 -->
 <div class="overlay" id="rpt-modal">
   <div class="modal">
@@ -1625,6 +1692,9 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   </div>
   <div class="mob-nav-item" data-mtab="dept" onclick="mobGo('dept')" id="mn-dept" style="display:none">
     <span class="mn-ico">📋</span><span class="mn-lbl">집약</span>
+  </div>
+  <div class="mob-nav-item" data-mtab="weekly" onclick="mobGo('weekly')">
+    <div class="mn-ico">📋</div><div class="mn-lbl">주간보고</div>
   </div>
   <div class="mob-nav-item" data-mtab="meeting" onclick="mobGo('meeting')" id="mn-meeting" style="display:none">
     <span class="mn-ico">🏛️</span><span class="mn-lbl">회의</span>
@@ -2907,6 +2977,325 @@ async function saveIssueMaster(){
 // ══════════════════════════════════════════════
 // 전사회의 카테고리별 섹션 자동 구성
 // ══════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// 주간 업무보고
+// ══════════════════════════════════════════════
+
+// 주차 셀렉트 옵션 채우기 (최근 12주)
+function buildWeekOptions(selId){
+  var sel = document.getElementById(selId);
+  if(!sel) return;
+  var now = new Date();
+  sel.innerHTML = '';
+  for(var i=0; i<12; i++){
+    var d = new Date(now);
+    d.setDate(d.getDate() - i*7);
+    var w = getWeek(d);
+    var y = d.getFullYear();
+    var day = d.getDay();
+    var diff = d.getDate() - (day===0?6:day-1);
+    var mon = new Date(d); mon.setDate(diff);
+    var sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    var label = y+'년 '+w+'주 ('+(mon.getMonth()+1)+'/'+mon.getDate()+'~'+(sun.getMonth()+1)+'/'+sun.getDate()+')';
+    var opt = document.createElement('option');
+    opt.value = y+'-'+w;
+    opt.textContent = label;
+    if(i===0) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+
+// 주간보고 패널 진입
+async function loadWeekly(){
+  buildWeekOptions('wk-sel');
+  await loadWeeklyDetail();
+}
+
+// 선택된 주차의 주간보고 상세 표시
+async function loadWeeklyDetail(){
+  var sel = document.getElementById('wk-sel');
+  if(!sel) return;
+  var wkVal = sel.value; // "2026-16"
+  var parts = wkVal.split('-');
+  var yr = parseInt(parts[0]);
+  var wk = parseInt(parts[1]);
+
+  var wrap = document.getElementById('weekly-detail');
+  var emptyEl = document.getElementById('weekly-empty');
+  if(!wrap) return;
+
+  if(!sb){
+    wrap.innerHTML = '';
+    if(emptyEl) emptyEl.style.display = 'block';
+    return;
+  }
+
+  try{
+    var res = await sb.from('weekly_reports')
+      .select('*')
+      .eq('author_user_id', CU.user_id)
+      .eq('year_num', yr)
+      .eq('week_number', wk)
+      .order('created_at', {ascending:false})
+      .limit(1);
+
+    var report = (res && res.data && res.data.length) ? res.data[0] : null;
+
+    if(!report){
+      wrap.innerHTML = '';
+      if(emptyEl) emptyEl.style.display = 'block';
+      return;
+    }
+
+    if(emptyEl) emptyEl.style.display = 'none';
+
+    // 연결된 일일보고 조회
+    var itemRes = await sb.from('weekly_report_items')
+      .select('*,daily_reports(*)')
+      .eq('weekly_report_id', report.id);
+    var items = (itemRes && itemRes.data) ? itemRes.data : [];
+
+    var html = '<div class="card" style="margin-bottom:12px">';
+    html += '<div class="card-hdr"><span class="card-ttl">'+esc(report.week_label||'주간 보고')+'</span>';
+    html += '<div style="display:flex;gap:8px">';
+    html += '<span class="bdg bdg-stage">'+esc(report.stage||'draft')+'</span>';
+    html += '<button class="btn btn-ghost btn-sm" onclick="editWeeklyReport('+report.id+')">수정</button>';
+    html += '</div></div>';
+    html += '<div style="padding:0 16px 16px">';
+
+    // 포함된 일일보고 목록
+    if(items.length){
+      html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--txt-m);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">이번 주 업무</div>';
+      items.forEach(function(item){
+        var dr = item.daily_reports;
+        if(!dr) return;
+        var content = item.edited_content || dr.content_original || '';
+        html += '<div style="padding:10px 12px;background:#f8faf9;border-radius:8px;margin-bottom:6px;border-left:3px solid var(--z-green)">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--txt-h);margin-bottom:2px">'+(dr.report_title?esc(dr.report_title):catName(dr.category_code))+'</div>';
+        html += '<div style="font-size:12px;color:var(--txt-b);line-height:1.5">'+esc(content)+'</div>';
+        html += '<div style="font-size:10px;color:var(--txt-m);margin-top:4px">'+esc(dr.report_date||'')+'</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
+    // 이번 주 요약
+    if(report.summary){
+      html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--txt-m);margin-bottom:6px">이번 주 요약</div>';
+      html += '<div style="font-size:13px;color:var(--txt-b);line-height:1.65;white-space:pre-wrap">'+esc(report.summary)+'</div></div>';
+    }
+
+    // 차주 계획
+    if(report.next_week_plan){
+      html += '<div style="margin-bottom:14px;padding:12px 14px;background:#EFF6FF;border-radius:8px;border-left:3px solid #1D4ED8">';
+      html += '<div style="font-size:12px;font-weight:700;color:#1D4ED8;margin-bottom:6px">▶ 차주 계획</div>';
+      html += '<div style="font-size:13px;color:#1e3a5f;line-height:1.65;white-space:pre-wrap">'+esc(report.next_week_plan)+'</div></div>';
+    }
+
+    // 의사결정 요청
+    if(report.decision_request){
+      html += '<div style="padding:12px 14px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
+      html += '<div style="font-size:12px;font-weight:700;color:#C2410C;margin-bottom:6px">⚡ 의사결정 / 상위 요청</div>';
+      html += '<div style="font-size:13px;color:#7c2d12;line-height:1.65;white-space:pre-wrap">'+esc(report.decision_request)+'</div></div>';
+    }
+
+    html += '</div></div>';
+    wrap.innerHTML = html;
+  }catch(e){
+    console.error('loadWeeklyDetail 오류', e);
+    toast('주간보고 조회 중 오류가 발생했습니다','err');
+  }
+}
+
+// 주간보고 모달 열기
+function openWeeklyModal(editId){
+  buildWeekOptions('wk-modal-week');
+  document.getElementById('wk-summary').value = '';
+  document.getElementById('wk-next-plan').value = '';
+  document.getElementById('wk-decision').value = '';
+  document.getElementById('weekly-modal-bg').dataset.editId = editId || '';
+  loadWeeklyDailyList();
+  document.getElementById('weekly-modal-bg').style.display = 'flex';
+}
+
+function closeWeeklyModal(e){
+  if(e && e.target !== document.getElementById('weekly-modal-bg')) return;
+  document.getElementById('weekly-modal-bg').style.display = 'none';
+}
+
+// 선택된 주차의 일일보고 목록 로드
+async function loadWeeklyDailyList(){
+  var sel = document.getElementById('wk-modal-week');
+  if(!sel || !sb) return;
+  var wkVal = sel.value;
+  var parts = wkVal.split('-');
+  var yr = parseInt(parts[0]);
+  var wk = parseInt(parts[1]);
+
+  // 해당 주 월~일 날짜 계산
+  var now = new Date();
+  var startDate = getWeekStartDate(yr, wk);
+  var endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + 6);
+
+  var startStr = startDate.toISOString().split('T')[0];
+  var endStr = endDate.toISOString().split('T')[0];
+
+  var wrap = document.getElementById('wk-daily-list');
+  wrap.innerHTML = '<div style="padding:12px;text-align:center;color:var(--txt-m)">불러오는 중...</div>';
+
+  try{
+    var res = await sb.from('daily_reports')
+      .select('id,report_date,report_title,content_original,category_code,status,next_plan')
+      .eq('author_user_id', CU.user_id)
+      .gte('report_date', startStr)
+      .lte('report_date', endStr)
+      .order('report_date', {ascending:true});
+
+    var rpts = (res && res.data) ? res.data : [];
+
+    if(!rpts.length){
+      wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">해당 주 등록된 업무가 없습니다</div>';
+      return;
+    }
+
+    var listHtml = '';
+    rpts.forEach(function(r){
+      listHtml += '<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s" >';
+      listHtml += '<input type="checkbox" name="wk-daily-sel" value="'+r.id+'" style="margin-top:3px;flex-shrink:0" checked>';
+      listHtml += '<div style="flex:1">';
+      listHtml += '<div style="font-size:13px;font-weight:700;color:var(--txt-h)">'+(r.report_title?esc(r.report_title):catName(r.category_code))+'</div>';
+      listHtml += '<div style="font-size:12px;color:var(--txt-b);margin-top:2px;line-height:1.4">'+esc((r.content_original||'').substring(0,80))+((r.content_original||'').length>80?'...':'')+'</div>';
+      if(r.next_plan) listHtml += '<div style="font-size:11px;color:var(--z-green-d);margin-top:3px">▶ '+esc(r.next_plan.substring(0,60))+'</div>';
+      listHtml += '</div>';
+      listHtml += '<div style="font-size:10px;color:var(--txt-m);flex-shrink:0;text-align:right"><div>'+esc(r.report_date)+'</div><div><span class="bdg '+(r.status==='완료'?'s-done':'s-wip')+'">'+esc(r.status)+'</span></div></div>';
+      listHtml += '</label>';
+    });
+
+    wrap.innerHTML = listHtml;
+  }catch(e){
+    console.error('loadWeeklyDailyList 오류', e);
+    wrap.innerHTML = '<div style="padding:16px;color:#e53e3e;font-size:13px">조회 중 오류가 발생했습니다</div>';
+  }
+}
+
+// 주의 시작일(월요일) 계산
+function getWeekStartDate(year, week){
+  var jan4 = new Date(year, 0, 4);
+  var jan4Day = jan4.getDay() || 7;
+  var weekStart = new Date(jan4);
+  weekStart.setDate(jan4.getDate() - jan4Day + 1 + (week-1)*7);
+  return weekStart;
+}
+
+// 주간보고 저장
+async function saveWeeklyReport(){
+  var sel = document.getElementById('wk-modal-week');
+  var nextPlan = document.getElementById('wk-next-plan').value.trim();
+  var summary = document.getElementById('wk-summary').value.trim();
+  var decision = document.getElementById('wk-decision').value.trim();
+
+  if(!nextPlan){ toast('차주 계획을 입력하세요','err'); return; }
+
+  var wkVal = sel.value;
+  var parts = wkVal.split('-');
+  var yr = parseInt(parts[0]);
+  var wk = parseInt(parts[1]);
+
+  // 선택된 일일보고 ID 수집
+  var checked = document.querySelectorAll('input[name="wk-daily-sel"]:checked');
+  var selectedIds = [];
+  checked.forEach(function(cb){ selectedIds.push(parseInt(cb.value)); });
+
+  if(!sb){ toast('주간보고 저장됨 (데모)','ok'); closeWeeklyModal(); return; }
+
+  try{
+    // 기존 주간보고 확인
+    var editId = document.getElementById('weekly-modal-bg').dataset.editId;
+    var weekInfo = getWeekInfo(getWeekStartDate(yr, wk).toISOString().split('T')[0]);
+
+    var payload = {
+      author_user_id: CU.user_id,
+      author_name: CU.name,
+      company_code: CU.company_code,
+      org_code: CU.org_code,
+      year_num: yr,
+      week_number: wk,
+      week_label: yr+'년 '+wk+'주',
+      summary: summary || null,
+      next_week_plan: nextPlan,
+      decision_request: decision || null,
+      stage: 'submitted',
+      updated_at: new Date().toISOString()
+    };
+
+    var wrId;
+    if(editId){
+      var upRes = await sb.from('weekly_reports').update(payload).eq('id', parseInt(editId));
+      if(upRes.error) throw upRes.error;
+      wrId = parseInt(editId);
+      // 기존 items 삭제
+      await sb.from('weekly_report_items').delete().eq('weekly_report_id', wrId);
+    } else {
+      var insRes = await sb.from('weekly_reports').insert([payload]).select();
+      if(insRes.error) throw insRes.error;
+      wrId = insRes.data[0].id;
+    }
+
+    // 선택된 일일보고 연결
+    if(selectedIds.length){
+      var itemPayloads = selectedIds.map(function(did){
+        return { weekly_report_id: wrId, daily_report_id: did };
+      });
+      var itemRes = await sb.from('weekly_report_items').insert(itemPayloads);
+      if(itemRes.error) throw itemRes.error;
+    }
+
+    toast('주간보고가 저장됐습니다','ok');
+    document.getElementById('weekly-modal-bg').style.display = 'none';
+    await loadWeeklyDetail();
+
+  }catch(e){
+    console.error('saveWeeklyReport 오류', e);
+    toast('저장 중 오류가 발생했습니다','err');
+  }
+}
+
+// 주간보고 수정
+async function editWeeklyReport(id){
+  if(!sb) return;
+  try{
+    var res = await sb.from('weekly_reports').select('*').eq('id', id).single();
+    if(!res.data) return;
+    var r = res.data;
+
+    // 모달 열기
+    buildWeekOptions('wk-modal-week');
+    var sel = document.getElementById('wk-modal-week');
+    sel.value = r.year_num+'-'+r.week_number;
+
+    document.getElementById('wk-summary').value = r.summary || '';
+    document.getElementById('wk-next-plan').value = r.next_week_plan || '';
+    document.getElementById('wk-decision').value = r.decision_request || '';
+    document.getElementById('weekly-modal-bg').dataset.editId = id;
+    document.getElementById('weekly-modal-bg').style.display = 'flex';
+
+    await loadWeeklyDailyList();
+
+    // 기존 연결 항목 체크 표시
+    var itemRes = await sb.from('weekly_report_items').select('daily_report_id').eq('weekly_report_id', id);
+    if(itemRes.data){
+      itemRes.data.forEach(function(item){
+        var cb = document.querySelector('input[name="wk-daily-sel"][value="'+item.daily_report_id+'"]');
+        if(cb) cb.checked = true;
+      });
+    }
+  }catch(e){
+    console.error('editWeeklyReport 오류', e);
+  }
+}
+
 function renderMeetingSections(rpts){
   // 카테고리 → 전사회의 섹션 매핑
   var sectionMap = {
@@ -3592,6 +3981,7 @@ function go(tab){
   if(tab==='issues') loadIssues();
   if(tab==='issue-master') loadIssueMaster();
   if(tab==='review') loadReview();
+  if(tab==='weekly') loadWeekly();
   if(tab==='admin') loadUsers();
   closeSdb();
 }
