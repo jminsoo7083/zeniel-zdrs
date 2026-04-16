@@ -1081,6 +1081,21 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   flex-wrap:wrap;gap:6px;
 }
 
+
+/* 주간보고 모달 - 모바일 */
+@media(max-width:600px){
+  #weekly-modal-bg > div {
+    width:100% !important;
+    max-height:92vh !important;
+    border-radius:16px 16px 0 0 !important;
+    margin-bottom:0;
+    align-self:flex-end;
+  }
+  #weekly-modal-bg {
+    align-items:flex-end !important;
+    padding:0 !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1487,9 +1502,9 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 </div>
 
 <!-- 주간보고 작성 모달 -->
-  <div class="modal-bg" id="weekly-modal-bg" style="display:none" onclick="closeWeeklyModal(event)">
-    <div class="modal" style="max-width:700px;width:95vw;max-height:90vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
-      <div class="modal-hdr">
+  <div id="weekly-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:center;justify-content:center;padding:20px;box-sizing:border-box" onclick="closeWeeklyModal(event)">
+    <div style="background:#fff;border-radius:16px;width:min(700px,95vw);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)" onclick="event.stopPropagation()">
+      <div class="modal-hdr" style="flex-shrink:0">>
         <div class="modal-ttl">📋 주간 업무보고 작성</div>
         <button class="modal-close" onclick="closeWeeklyModal()">✕</button>
       </div>
