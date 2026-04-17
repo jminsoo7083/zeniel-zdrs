@@ -1272,9 +1272,9 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         </div>
         <div class="fbar" style="flex-wrap:wrap;gap:6px">
           <div class="date-range-row" style="margin-top:0">
-            <input type="date" id="f-my-date-from" onchange="setDateRange('my','custom');loadMy()">
+            <input type="date" id="f-my-date-from" onchange="markCustomRange('my');loadMy()">
             <span style="color:var(--txt-m);font-size:12px">~</span>
-            <input type="date" id="f-my-date-to" onchange="setDateRange('my','custom');loadMy()">
+            <input type="date" id="f-my-date-to" onchange="markCustomRange('my');loadMy()">
           </div>
           <span class="fbar-lbl">카테고리</span>
           <select id="f-my-cat" onchange="loadMy()"><option value="">전체</option></select>
@@ -1964,6 +1964,15 @@ async function loadCurrentUserProfile(authUserId){
 // ══════════════════════════════════════════════
 // 날짜 범위 빠른선택
 // ══════════════════════════════════════════════
+
+function markCustomRange(panel){
+  var btns = ['today','week','month','custom'];
+  btns.forEach(function(b){
+    var el = document.getElementById(panel+'-q-'+b) || document.getElementById('my-q-'+b);
+    if(el) el.classList.toggle('on', b==='custom');
+  });
+}
+
 function setDateRange(panel, mode){
   // 로그인 전 호출 방지
   if(!CU && (panel==='my' || panel==='rv' || panel==='dp')) {
@@ -2729,7 +2738,19 @@ async function loadDept(){
   if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
   else{
     try{
-      const{data}=await sb.from('daily_reports').select('*').eq('company_code',CU.company_code).eq('report_date',date).in('stage',['team_approved','dept_approved','exec_approved']).order('category_code').order('priority_original',{ascending:false});
+      var dq = sb.from('daily_reports').select('*')
+        .eq('company_code', CU.company_code)
+        .gte('report_date', dateFrom)
+        .lte('report_date', dateTo)
+        .order('category_code')
+        .order('priority_original',{ascending:false});
+
+      // lv5는 전체, 나머지는 team_approved 이상만
+      if(CU.position_level < 5){
+        dq = dq.in('stage',['team_approved','dept_approved','exec_approved']);
+      }
+      var dqRes = await dq;
+      var data = dqRes ? dqRes.data : null;
       if(data)rpts=data;
     }catch(e){}
   }
