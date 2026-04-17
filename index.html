@@ -1583,6 +1583,8 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
             <label style="font-size:13px;font-weight:700;color:var(--txt-h);margin:0">⚠️ 이번 주 이슈 현황 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(일일보고 이슈 자동 수집)</span></label>
             <span id="wk-issue-cnt" style="font-size:11px;color:var(--z-green-d);font-weight:700"></span>
           </div>
+          <div style="font-size:11px;color:var(--txt-m);margin-bottom:6px" id="wk-issue-desc">체크된 이슈가 주간보고에 포함됩니다</div>
+          </div>
           <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;background:#fafafa">
             <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 이슈가 표시됩니다</div>
           </div>
@@ -3302,6 +3304,14 @@ function openWeeklyModal(editId){
   document.getElementById('wk-next-plan').value = '';
   document.getElementById('wk-decision').value = '';
   document.getElementById('weekly-modal-bg').dataset.editId = editId || '';
+  // 권한별 이슈 섹션 라벨 변경
+  var descEl = document.getElementById('wk-issue-desc');
+  if(descEl){
+    var lv = CU ? (CU.position_level||1) : 1;
+    if(lv >= 5) descEl.textContent = '전사 이슈 수집 · 포함할 이슈를 체크하세요';
+    else if(lv >= 2) descEl.textContent = '팀원들의 이슈가 표시됩니다 · 포함할 이슈를 선택하세요';
+    else descEl.textContent = '내 이슈 · 포함할 이슈를 체크하세요';
+  }
   loadWeeklyDailyList();
   document.getElementById('weekly-modal-bg').style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
 }
@@ -3340,14 +3350,32 @@ async function loadWeeklyDailyList(){
   }
 
   try{
-    var res = await sb.from('daily_reports')
-      .select('id,report_date,report_title,content_original,issue_content,category_code,status,next_plan,is_issue,is_persistent,importance_level')
-      .eq('author_user_id', CU.user_id)
+    var q = sb.from('daily_reports')
+      .select('id,report_date,report_title,content_original,issue_content,category_code,status,next_plan,is_issue,is_persistent,importance_level,author_name,author_user_id,org_code')
       .eq('is_issue', true)
       .gte('report_date', startStr)
       .lte('report_date', endStr)
+      .order('importance_level', {ascending:false})
       .order('report_date', {ascending:true});
 
+    // 권한별 조회 범위
+    var lv = CU.position_level || 1;
+    if(lv >= 5){
+      // 전략기획실장: 전 계열사 (본인 제외)
+      q = q.neq('author_user_id', CU.user_id);
+    } else if(lv >= 2){
+      // 팀장 이상: 하위 조직 + 본인
+      var managedOrgs = getManagedOrgCodes(currentOrgCode());
+      if(managedOrgs.length){
+        managedOrgs.push(currentOrgCode()); // 본인 조직 포함
+        q = q.in('org_code', managedOrgs);
+      }
+    } else {
+      // 팀원: 본인만
+      q = q.eq('author_user_id', CU.user_id);
+    }
+
+    var res = await q;
     var rpts = (res && res.data) ? res.data : [];
     if(cntEl) cntEl.textContent = rpts.length ? rpts.length+'건' : '이슈 없음';
 
@@ -3356,22 +3384,53 @@ async function loadWeeklyDailyList(){
       return;
     }
 
-    var listHtml = '';
+    // 작성자별 그룹핑
+    var grouped = {};
+    var groupOrder = [];
     rpts.forEach(function(r){
-      var lvColor = r.importance_level===3 ? '#dc2626' : r.importance_level===2 ? '#c8860a' : '#5a7a6e';
-      var lvLabel = r.importance_level===3 ? '전사회의' : r.importance_level===2 ? '중요' : '일반';
-      listHtml += '<div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start">';
-      listHtml += '<div style="flex:1">';
-      listHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">';
-      listHtml += '<span style="font-size:13px;font-weight:700;color:var(--txt-h)">'+(r.report_title?esc(r.report_title):catName(r.category_code))+'</span>';
-      listHtml += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;background:'+lvColor+'20;color:'+lvColor+'">'+lvLabel+'</span>';
-      if(r.is_persistent) listHtml += '<span style="font-size:10px;background:#FEF3C7;color:#92400e;padding:2px 6px;border-radius:4px">📌 지속관리</span>';
-      listHtml += '</div>';
-      if(r.issue_content) listHtml += '<div style="font-size:12px;color:#dc2626;line-height:1.5;margin-bottom:3px">'+esc(r.issue_content)+'</div>';
-      if(r.next_plan) listHtml += '<div style="font-size:11px;color:var(--z-green-d)">▶ 차주: '+esc(r.next_plan.substring(0,60))+(r.next_plan.length>60?'...':'')+'</div>';
-      listHtml += '</div>';
-      listHtml += '<div style="text-align:right;flex-shrink:0;font-size:10px;color:var(--txt-m)">'+esc(r.report_date)+'</div>';
-      listHtml += '</div>';
+      var key = r.author_user_id;
+      if(!grouped[key]){
+        grouped[key] = { name: r.author_name||'-', items:[] };
+        groupOrder.push(key);
+      }
+      grouped[key].items.push(r);
+    });
+
+    var listHtml = '';
+    // 본인 것인지 여부 표시
+    var isMgr = (lv >= 2);
+
+    groupOrder.forEach(function(uid){
+      var grp = grouped[uid];
+      var isMine = (uid === CU.user_id);
+
+      // 그룹 헤더 (팀장 이상만)
+      if(isMgr){
+        listHtml += '<div style="padding:8px 14px;background:var(--z-green-s);border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--z-green-d);display:flex;align-items:center;gap:6px">';
+        listHtml += '👤 '+esc(grp.name);
+        if(isMine) listHtml += ' <span style="font-size:10px;color:var(--txt-m)">(내 이슈)</span>';
+        listHtml += ' <span style="font-size:10px;color:var(--txt-m)">'+grp.items.length+'건</span>';
+        listHtml += '</div>';
+      }
+
+      grp.items.forEach(function(r){
+        var lvColor = r.importance_level===3?'#dc2626':r.importance_level===2?'#c8860a':'#5a7a6e';
+        var lvLabel = r.importance_level===3?'🔴 전사회의':r.importance_level===2?'★ 중요':'일반';
+        // 체크박스로 포함/제외 선택 가능
+        listHtml += '<label style="display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff">';
+        listHtml += '<input type="checkbox" name="wk-issue-sel" value="'+r.id+'" style="margin-top:3px;flex-shrink:0;accent-color:var(--z-green)" checked>';
+        listHtml += '<div style="flex:1">';
+        listHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap">';
+        listHtml += '<span style="font-size:12px;font-weight:700;color:var(--txt-h)">'+(r.report_title?esc(r.report_title):catName(r.category_code))+'</span>';
+        listHtml += '<span style="font-size:10px;padding:1px 5px;border-radius:3px;font-weight:700;background:'+lvColor+'15;color:'+lvColor+'">'+lvLabel+'</span>';
+        if(r.is_persistent) listHtml += '<span style="font-size:10px;background:#FEF3C7;color:#92400e;padding:1px 5px;border-radius:3px">📌 지속</span>';
+        listHtml += '</div>';
+        if(r.issue_content) listHtml += '<div style="font-size:11px;color:#dc2626;line-height:1.5;margin-bottom:2px">'+esc(r.issue_content)+'</div>';
+        if(r.next_plan) listHtml += '<div style="font-size:11px;color:var(--z-green-d)">▶ '+esc(r.next_plan.substring(0,60))+(r.next_plan.length>60?'...':'')+'</div>';
+        listHtml += '</div>';
+        listHtml += '<div style="text-align:right;flex-shrink:0;font-size:10px;color:var(--txt-m)">'+esc(r.report_date)+'</div>';
+        listHtml += '</label>';
+      });
     });
 
     wrap.innerHTML = listHtml;
