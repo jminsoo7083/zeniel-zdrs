@@ -1458,7 +1458,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
       <div class="pg-hdr">
         <div>
           <div class="pg-title">전사 업무회의</div>
-          <div class="pg-sub" id="meeting-sub">주차를 선택하면 계열사별 보고 현황이 표시됩니다</div>
+          <div class="pg-sub" id="meeting-sub">주간보고 기반 · 각 조직의 주간보고가 자동 집계됩니다</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="f-mt-week" class="fbar-input" style="min-width:190px"></select>
@@ -3498,65 +3498,115 @@ async function editWeeklyReport(id){
 }
 
 function renderMeetingSections(rpts){
-  // 카테고리 → 전사회의 섹션 매핑
-  var sectionMap = {
-    'NEW_BIZ':     { label:'📊 신규 사업기회', icon:'📊', color:'#1D4ED8', bg:'#EFF6FF' },
-    'RENEW':       { label:'🔄 재계약 관리',   icon:'🔄', color:'#065f46', bg:'#D1FAE5' },
-    'LABOR':       { label:'⚖️ 노무 이슈',     icon:'⚖️', color:'#92400e', bg:'#FEF3C7' },
-    'SAFETY':      { label:'🦺 안전보건',      icon:'🦺', color:'#7c3aed', bg:'#EDE9FE' },
-    'RISK':        { label:'⚠️ 리스크 관리',   icon:'⚠️', color:'#b91a3d', bg:'#fce4eb' },
-    'STRATEGY':    { label:'🎯 전략/기획',     icon:'🎯', color:'#1a2a3a', bg:'#f0f5f3' },
-    'HR':          { label:'👥 인사/총무/교육',icon:'👥', color:'#5b21b6', bg:'#F5F3FF' },
-    'IT':          { label:'💻 IT/DX/시스템',  icon:'💻', color:'#0369a1', bg:'#E0F2FE' },
-    'ADMIN':       { label:'📋 일반 행정',     icon:'📋', color:'#374151', bg:'#F9FAFB' },
-  };
-
   var secEl = document.getElementById('meeting-sections');
   if(!secEl) return;
-
   if(!rpts || !rpts.length){ secEl.style.display='none'; return; }
 
-  // 카테고리별 그룹핑
-  var grouped = {};
-  rpts.forEach(function(r){
-    var cat = r.category_code || 'ADMIN';
-    if(!grouped[cat]) grouped[cat] = [];
-    grouped[cat].push(r);
-  });
+  // 주간보고 vs 일일보고 분리
+  var weeklyRpts = rpts.filter(function(r){ return r._type==='weekly'; });
+  var dailyRpts  = rpts.filter(function(r){ return r._type!=='weekly'; });
 
-  var sectionsHtml = '';
-  Object.keys(grouped).forEach(function(cat){
-    var sec = sectionMap[cat] || { label:'📋 '+catName(cat), icon:'📋', color:'#374151', bg:'#F9FAFB' };
-    var items = grouped[cat];
-    sectionsHtml += '<div class="meeting-section" style="margin-bottom:16px">'
-      +'<div class="meeting-sec-hdr" style="background:'+sec.bg+';border-left:4px solid '+sec.color+';padding:10px 16px;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:space-between">'
-      +'<span style="font-size:14px;font-weight:700;color:'+sec.color+'">'+sec.label+'</span>'
-      +'<span style="font-size:11px;font-weight:700;color:'+sec.color+'">'+items.length+'건</span>'
-      +'</div>'
-      +'<div style="border:1px solid #e5e7eb;border-top:none;border-radius:0 0 8px 8px;overflow:hidden">';
+  var html = '';
 
-    items.forEach(function(r){
-      sectionsHtml += '<div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;background:#fff">'
-        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">'
-        +'<div style="flex:1">'
-        +(r.report_title?'<div style="font-size:13px;font-weight:700;color:#0f1f17;margin-bottom:4px">'+esc(r.report_title)+'</div>':'')
-        +'<div style="font-size:12px;color:#374151;line-height:1.6">'+esc(r.content_original)+'</div>'
-        +(r.next_plan?'<div style="font-size:11px;color:#065f46;background:#D1FAE5;padding:4px 8px;border-radius:4px;margin-top:4px">▶ 차주: '+esc(r.next_plan)+'</div>':'')
-        +(r.is_issue?'<div style="font-size:11px;color:#b91a3d;background:#fce4eb;padding:4px 8px;border-radius:4px;margin-top:4px">⚠ '+esc(r.issue_content||'')+'</div>':'')
-        +'</div>'
-        +'<div style="text-align:right;flex-shrink:0;min-width:80px">'
-        +'<div style="font-size:11px;font-weight:600;color:#5a7a6e">'+esc(r.author_name||'-')+'</div>'
-        +(r.due_date?'<div style="font-size:10px;color:#8aaa9e;margin-top:2px">기한 '+r.due_date+'</div>':'')
-        +(r.decision_required?'<div style="font-size:10px;color:#C2410C;font-weight:700;margin-top:2px">의사결정 필요</div>':'')
-        +'</div>'
-        +'</div>'
-        +'</div>';
+  // ① 조직별 주간보고 섹션
+  if(weeklyRpts.length){
+    html += '<div style="margin-bottom:20px">';
+    html += '<div style="font-size:13px;font-weight:800;color:var(--txt-h);margin-bottom:10px;padding:0 2px">📋 조직별 주간보고</div>';
+    weeklyRpts.forEach(function(wr){
+      var w = wr._weekly;
+      var items = wr._items || [];
+      html += '<div class="card" style="margin-bottom:12px">';
+      html += '<div class="card-hdr" style="background:#f0f5f3">';
+      html += '<div><div style="font-size:14px;font-weight:800;color:var(--txt-h)">'+esc(wr.author_name||'-')+'</div>';
+      html += '<div style="font-size:11px;color:var(--txt-m)">'+esc(w.week_label||'')+'</div></div>';
+      if(wr.decision_required) html += '<span style="font-size:11px;background:#FFF7ED;color:#C2410C;padding:3px 8px;border-radius:6px;font-weight:700">⚡ 의사결정 필요</span>';
+      html += '</div>';
+      html += '<div style="padding:12px 16px">';
+
+      // 이슈 항목
+      var issueItems = items.filter(function(it){ return it.daily_reports && it.daily_reports.is_issue; });
+      if(issueItems.length){
+        html += '<div style="margin-bottom:10px"><div style="font-size:11px;font-weight:700;color:var(--txt-m);margin-bottom:6px">⚠️ 이번 주 이슈</div>';
+        issueItems.forEach(function(it){
+          var dr = it.daily_reports;
+          var impColor = dr.importance_level===3?'#dc2626':dr.importance_level===2?'#c8860a':'#5a7a6e';
+          html += '<div style="padding:8px 10px;background:#fef2f2;border-radius:6px;margin-bottom:5px;border-left:3px solid '+impColor+'">';
+          html += '<div style="font-size:12px;font-weight:700;color:var(--txt-h)">'+esc(dr.report_title||'')+'</div>';
+          html += '<div style="font-size:11px;color:#dc2626;margin-top:2px">'+esc(dr.issue_content||'')+'</div>';
+          if(dr.next_plan) html += '<div style="font-size:11px;color:var(--z-green-d);margin-top:2px">▶ 차주: '+esc(dr.next_plan)+'</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // 차주 계획
+      if(w.next_week_plan){
+        html += '<div style="padding:10px 12px;background:#EFF6FF;border-radius:8px;border-left:3px solid #1D4ED8;margin-bottom:8px">';
+        html += '<div style="font-size:11px;font-weight:700;color:#1D4ED8;margin-bottom:4px">▶ 차주 계획</div>';
+        html += '<div style="font-size:12px;color:#1e3a5f;white-space:pre-wrap">'+esc(w.next_week_plan)+'</div>';
+        html += '</div>';
+      }
+
+      // 의사결정 요청
+      if(w.decision_request){
+        html += '<div style="padding:10px 12px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
+        html += '<div style="font-size:11px;font-weight:700;color:#C2410C;margin-bottom:4px">⚡ 의사결정 / 상위 요청</div>';
+        html += '<div style="font-size:12px;color:#7c2d12;white-space:pre-wrap">'+esc(w.decision_request)+'</div>';
+        html += '</div>';
+      }
+
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  // ② 카테고리별 일일보고 (중요도 2이상)
+  if(dailyRpts.length){
+    var sectionMap = {
+      'BIZ_NEW': { label:'📊 신규 사업기회', color:'#1D4ED8', bg:'#EFF6FF' },
+      'BIZ_RE':  { label:'🔄 재계약 관리',   color:'#065f46', bg:'#D1FAE5' },
+      'LABOR':   { label:'⚖️ 노무 이슈',     color:'#92400e', bg:'#FEF3C7' },
+      'SAFETY':  { label:'🦺 안전보건',      color:'#7c3aed', bg:'#EDE9FE' },
+      'RISK':    { label:'⚠️ 리스크 관리',   color:'#b91a3d', bg:'#fce4eb' },
+      'OPS':     { label:'🏭 영업/현장운영', color:'#374151', bg:'#F9FAFB' },
+    };
+    var grouped = {};
+    dailyRpts.forEach(function(r){
+      var cat = r.category_code || 'OPS';
+      if(!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(r);
     });
 
-    sectionsHtml += '</div></div>';
-  });
+    html += '<div style="font-size:13px;font-weight:800;color:var(--txt-h);margin-bottom:10px;padding:0 2px">📌 주요 현안 (중요도 ★이상)</div>';
+    Object.keys(grouped).forEach(function(cat){
+      var sec = sectionMap[cat] || { label:'📋 '+catName(cat), color:'#374151', bg:'#F9FAFB' };
+      var items = grouped[cat];
+      html += '<div style="margin-bottom:12px;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">';
+      html += '<div style="background:'+sec.bg+';padding:10px 14px;border-left:4px solid '+sec.color+';display:flex;justify-content:space-between;align-items:center">';
+      html += '<span style="font-size:13px;font-weight:700;color:'+sec.color+'">'+sec.label+'</span>';
+      html += '<span style="font-size:11px;font-weight:700;color:'+sec.color+'">'+items.length+'건</span>';
+      html += '</div>';
+      items.forEach(function(r){
+        html += '<div style="padding:10px 14px;border-bottom:1px solid #f3f4f6;background:#fff;display:flex;gap:10px;align-items:flex-start">';
+        html += '<div style="flex:1">';
+        if(r.report_title) html += '<div style="font-size:12px;font-weight:700;color:var(--txt-h);margin-bottom:2px">'+esc(r.report_title)+'</div>';
+        html += '<div style="font-size:12px;color:var(--txt-b);line-height:1.5">'+esc(r.content_original||'')+'</div>';
+        if(r.next_plan) html += '<div style="font-size:11px;color:var(--z-green-d);margin-top:3px">▶ '+esc(r.next_plan)+'</div>';
+        if(r.is_issue&&r.issue_content) html += '<div style="font-size:11px;color:#dc2626;margin-top:3px;background:#fef2f2;padding:3px 7px;border-radius:4px">⚠ '+esc(r.issue_content)+'</div>';
+        html += '</div>';
+        html += '<div style="text-align:right;flex-shrink:0;font-size:10px;color:var(--txt-m)"><div>'+esc(r.author_name||'-')+'</div>'+(r.due_date?'<div>기한 '+r.due_date+'</div>':'')+'</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+  }
 
-  secEl.innerHTML = sectionsHtml;
+  if(!weeklyRpts.length && !dailyRpts.length){
+    secEl.style.display='none';
+    return;
+  }
+
+  secEl.innerHTML = html;
   secEl.style.display = 'block';
 }
 
@@ -3644,29 +3694,76 @@ async function loadMeeting(){
   showLd(true);
   meetingData={};
   var rpts=[];
-  var meetingIssues=[]; // 전사회의 포함 이슈
-  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
+  var weeklyRpts=[];  // 주간보고
+  var meetingIssues=[];
+
+  if(!sb){ rpts=DEMO_REPORTS().filter(function(r){ return r.is_escalated_to_meeting; }); }
   else{
     try{
-      var [year,week]=weekVal.split('-').map(Number);
-      // 일 단위 보고
-      const{data}=await sb.from('daily_reports').select('*').eq('week_number',week).eq('year_num',year).eq('is_escalated_to_meeting',true).order('company_code').order('category_code').order('priority_original',{ascending:false});
-      if(data)rpts=data;
-      // 지속 이슈 (include_in_meeting=true, open/monitoring)
-      const{data:issueData}=await sb.from('issue_master')
-        .select('*, issue_weekly_update(weekly_summary, next_action, status_snapshot, year_num, week_number)')
-        .eq('include_in_meeting', true)
+      var wParts=weekVal.split('-');
+      var year=parseInt(wParts[0]);
+      var week=parseInt(wParts[1]);
+
+      // ① 주간보고 데이터 (핵심)
+      var wRes = await sb.from('weekly_reports')
+        .select('*, weekly_report_items(*, daily_reports(id,report_title,content_original,issue_content,category_code,report_date,status,next_plan,is_issue,importance_level,author_name,due_date))')
+        .eq('year_num', year)
+        .eq('week_number', week)
+        .order('company_code');
+      if(wRes && wRes.data) weeklyRpts = wRes.data;
+
+      // ② 일일보고 중 중요도 2이상 (주간보고 미작성 조직 보완)
+      var dRes = await sb.from('daily_reports')
+        .select('*')
+        .eq('week_number', week)
+        .eq('year_num', year)
+        .gte('importance_level', 2)
+        .order('company_code')
+        .order('category_code')
+        .order('priority_original',{ascending:false});
+      if(dRes && dRes.data) rpts = dRes.data;
+
+      // ③ 지속 이슈
+      var iRes = await sb.from('issue_master')
+        .select('*')
         .in('issue_status', ['open','monitoring'])
-        .order('priority_level', {ascending:false});
-      if(issueData) meetingIssues=issueData;
-    }catch(e){ console.error(e); }
+        .order('importance_level',{ascending:false});
+      if(iRes && iRes.data) meetingIssues = iRes.data;
+
+    }catch(e){ console.error('loadMeeting 오류', e); toast('회의 데이터 조회 오류','err'); }
   }
+
+  // 주간보고를 meeting 섹션으로 변환
+  var weeklyForMeeting = [];
+  weeklyRpts.forEach(function(wr){
+    // 주간보고 자체를 하나의 보고 단위로
+    weeklyForMeeting.push({
+      _type: 'weekly',
+      _weekly: wr,
+      id: 'w'+wr.id,
+      author_name: wr.author_name,
+      company_code: wr.company_code,
+      org_code: wr.org_code,
+      report_title: wr.week_label||'주간보고',
+      content_original: wr.summary||'',
+      next_plan: wr.next_week_plan||'',
+      decision_required: !!(wr.decision_request),
+      decision_content: wr.decision_request||'',
+      category_code: 'WEEKLY',
+      is_issue: !!(wr.decision_request),
+      importance_level: 3,
+      _items: wr.weekly_report_items||[]
+    });
+  });
+
+  // 병합 (주간보고 우선, 일일보고 보완)
+  var allRpts = weeklyForMeeting.concat(rpts);
   // 계열사별 그룹핑
-  COS.forEach(c=>{ meetingData[c.company_code]=[]; });
-  rpts.forEach(r=>{ if(meetingData[r.company_code]) meetingData[r.company_code].push(r); });
+  COS.forEach(function(c){ meetingData[c.company_code]=[]; });
+  allRpts.forEach(function(r){ if(meetingData[r.company_code]) meetingData[r.company_code].push(r); });
 
   // 긴급 배너
-  var urgents=rpts.filter(r=>r.is_urgent);
+  var urgents=allRpts.filter(function(r){ return r.is_urgent; });
   var banner=document.getElementById('urgent-banner');
   if(urgents.length){ banner.style.display='flex'; document.getElementById('urgent-cnt').textContent=urgents.length; }
   else banner.style.display='none';
@@ -3682,15 +3779,15 @@ async function loadMeeting(){
     </div>`;
   }).join('');
 
-  // 전사회의 이슈 섹션 렌더링 (전체 공통)
+  // 전사회의 이슈 섹션 렌더링
   renderMeetingIssues(meetingIssues);
-  // 카테고리별 보고 섹션 자동 구성
-  renderMeetingSections(rpts);
+  // 주간보고 + 일일보고 통합 섹션
+  renderMeetingSections(allRpts);
 
   // 빈 상태/데이터 상태 전환
   var emptyEl = document.getElementById('meeting-empty');
   var mainEl  = document.getElementById('meeting-main');
-  var totalRpts = rpts.length;
+  var totalRpts = allRpts.length;
 
   if(totalRpts === 0){
     renderMeetingSummary([]);
