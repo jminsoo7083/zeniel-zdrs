@@ -1089,6 +1089,19 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 .imp-2{background:#FEF3C7;color:#B45309}
 .imp-3{background:#FEE2E2;color:#B42318}
 
+
+/* 주간보고 모달 모바일 대응 */
+@media(max-width:600px){
+  #weekly-modal-bg {
+    padding:0 !important;
+    align-items:flex-end !important;
+  }
+  #weekly-modal-bg > div {
+    width:100% !important;
+    border-radius:20px 20px 0 0 !important;
+    max-height:92vh !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1495,39 +1508,51 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 </div>
 
 <!-- 주간보고 작성 모달 -->
-  <div class="modal-bg" id="weekly-modal-bg" style="display:none" onclick="closeWeeklyModal(event)">
-    <div class="modal" style="max-width:700px;width:95vw" onclick="event.stopPropagation()">
-      <div class="modal-hdr">
-        <div class="modal-ttl">📋 주간 업무보고 작성</div>
-        <button class="modal-close" onclick="closeWeeklyModal()">✕</button>
-      </div>
-      <div class="modal-body" style="padding:20px;max-height:80vh;overflow-y:auto">
-        <div class="fg2" style="margin-bottom:12px">
-          <label>대상 주차</label>
-          <select id="wk-modal-week" onchange="loadWeeklyDailyList()" style="width:100%"></select>
+  <div id="weekly-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box" onclick="closeWeeklyModal(event)">
+    <div style="background:#fff;border-radius:16px;width:min(680px,100%);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)" onclick="event.stopPropagation()">
+      <!-- 헤더 고정 -->
+      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#fff">
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--txt-h)">📋 주간 업무보고 작성</div>
+          <div style="font-size:12px;color:var(--txt-m);margin-top:2px">이번 주 이슈와 차주 계획을 정리합니다</div>
         </div>
+        <button onclick="closeWeeklyModal()" style="background:none;border:none;font-size:20px;color:var(--txt-m);cursor:pointer;padding:4px 8px;border-radius:6px">✕</button>
+      </div>
+      <!-- 스크롤 바디 -->
+      <div style="padding:20px 24px;overflow-y:auto;flex:1;min-height:0">
+        <!-- 주차 선택 -->
+        <div class="fg2" style="margin-bottom:16px">
+          <label>대상 주차</label>
+          <select id="wk-modal-week" onchange="loadWeeklyDailyList()" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px"></select>
+        </div>
+        <!-- 이번 주 이슈 자동 수집 -->
         <div style="margin-bottom:16px">
-          <label style="font-weight:700;font-size:13px;color:var(--txt-h);display:block;margin-bottom:8px">
-            📌 이번 주 업무 선택 <span style="font-weight:400;color:var(--txt-m);font-size:11px">포함할 업무를 체크하세요</span>
-          </label>
-          <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:260px;overflow-y:auto;background:#fafafa">
-            <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 해당 주 업무가 표시됩니다</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <label style="font-size:13px;font-weight:700;color:var(--txt-h);margin:0">⚠️ 이번 주 이슈 현황 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(일일보고 이슈 자동 수집)</span></label>
+            <span id="wk-issue-cnt" style="font-size:11px;color:var(--z-green-d);font-weight:700"></span>
+          </div>
+          <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;background:#fafafa">
+            <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 이슈가 표시됩니다</div>
           </div>
         </div>
-        <div class="fg2" style="margin-bottom:12px">
-          <label>이번 주 종합 요약 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
-          <textarea id="wk-summary" placeholder="이번 주 주요 성과, 진행 현황을 자유롭게 정리하세요" style="min-height:80px"></textarea>
+        <!-- 이번 주 요약 -->
+        <div class="fg2" style="margin-bottom:14px">
+          <label>이번 주 주요 성과 / 진행 현황 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
+          <textarea id="wk-summary" placeholder="이번 주 핵심 성과와 현황을 자유롭게 정리하세요" style="min-height:80px"></textarea>
         </div>
-        <div class="fg2" style="margin-bottom:12px">
+        <!-- 차주 계획 -->
+        <div class="fg2" style="margin-bottom:14px">
           <label>차주 계획 <span style="color:#e53e3e;font-size:11px">*</span></label>
-          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요" style="min-height:100px"></textarea>
+          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요&#10;예) 1. 국세상담센터 재입찰 대응 (4/22)&#10;    2. 홈플러스 노무이슈 후속 조치" style="min-height:100px"></textarea>
         </div>
+        <!-- 의사결정 요청 -->
         <div class="fg2" style="margin-bottom:4px">
           <label>의사결정 / 상위 요청 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
           <textarea id="wk-decision" placeholder="상위 판단이 필요한 사항이나 지원 요청 내용을 작성하세요" style="min-height:70px"></textarea>
         </div>
       </div>
-      <div class="modal-ftr">
+      <!-- 푸터 고정 -->
+      <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;flex-shrink:0;background:#fff">
         <button class="btn btn-ghost" onclick="closeWeeklyModal()">취소</button>
         <button class="btn btn-primary" onclick="saveWeeklyReport()">💾 주간보고 저장</button>
       </div>
@@ -3129,56 +3154,70 @@ function openWeeklyModal(editId){
 
 function closeWeeklyModal(e){
   if(e && e.target !== document.getElementById('weekly-modal-bg')) return;
-  document.getElementById('weekly-modal-bg').style.display = 'none';
+  var bg = document.getElementById('weekly-modal-bg');
+  if(bg){ bg.style.display = 'none'; bg.style.removeProperty('display'); bg.style.display = 'none'; }
 }
 
 // 선택된 주차의 일일보고 목록 로드
 async function loadWeeklyDailyList(){
   var sel = document.getElementById('wk-modal-week');
-  if(!sel || !sb) return;
+  if(!sel) return;
   var wkVal = sel.value;
+  if(!wkVal) return;
   var parts = wkVal.split('-');
   var yr = parseInt(parts[0]);
   var wk = parseInt(parts[1]);
 
-  // 해당 주 월~일 날짜 계산
-  var now = new Date();
   var startDate = getWeekStartDate(yr, wk);
   var endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 6);
-
   var startStr = startDate.toISOString().split('T')[0];
   var endStr = endDate.toISOString().split('T')[0];
 
   var wrap = document.getElementById('wk-daily-list');
-  wrap.innerHTML = '<div style="padding:12px;text-align:center;color:var(--txt-m)">불러오는 중...</div>';
+  var cntEl = document.getElementById('wk-issue-cnt');
+  if(!wrap) return;
+  wrap.innerHTML = '<div style="padding:14px;text-align:center;color:var(--txt-m);font-size:13px">불러오는 중...</div>';
+
+  if(!sb){
+    wrap.innerHTML = '<div style="padding:16px;text-align:center;color:var(--txt-m);font-size:13px">Supabase 연결 후 표시됩니다</div>';
+    if(cntEl) cntEl.textContent = '';
+    return;
+  }
 
   try{
     var res = await sb.from('daily_reports')
-      .select('id,report_date,report_title,content_original,category_code,status,next_plan')
+      .select('id,report_date,report_title,content_original,issue_content,category_code,status,next_plan,is_issue,is_persistent,importance_level')
       .eq('author_user_id', CU.user_id)
+      .eq('is_issue', true)
       .gte('report_date', startStr)
       .lte('report_date', endStr)
       .order('report_date', {ascending:true});
 
     var rpts = (res && res.data) ? res.data : [];
+    if(cntEl) cntEl.textContent = rpts.length ? rpts.length+'건' : '이슈 없음';
 
     if(!rpts.length){
-      wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">해당 주 등록된 업무가 없습니다</div>';
+      wrap.innerHTML = '<div style="padding:24px;text-align:center;color:var(--txt-m);font-size:13px">이번 주 등록된 이슈가 없습니다<br><span style="font-size:11px;margin-top:4px;display:block">일일보고에서 이슈 체크 후 등록하면 여기에 표시됩니다</span></div>';
       return;
     }
 
     var listHtml = '';
     rpts.forEach(function(r){
-      listHtml += '<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s" >';
-      listHtml += '<input type="checkbox" name="wk-daily-sel" value="'+r.id+'" style="margin-top:3px;flex-shrink:0" checked>';
+      var lvColor = r.importance_level===3 ? '#dc2626' : r.importance_level===2 ? '#c8860a' : '#5a7a6e';
+      var lvLabel = r.importance_level===3 ? '전사회의' : r.importance_level===2 ? '중요' : '일반';
+      listHtml += '<div style="padding:12px 14px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:flex-start">';
       listHtml += '<div style="flex:1">';
-      listHtml += '<div style="font-size:13px;font-weight:700;color:var(--txt-h)">'+(r.report_title?esc(r.report_title):catName(r.category_code))+'</div>';
-      listHtml += '<div style="font-size:12px;color:var(--txt-b);margin-top:2px;line-height:1.4">'+esc((r.content_original||'').substring(0,80))+((r.content_original||'').length>80?'...':'')+'</div>';
-      if(r.next_plan) listHtml += '<div style="font-size:11px;color:var(--z-green-d);margin-top:3px">▶ '+esc(r.next_plan.substring(0,60))+'</div>';
+      listHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">';
+      listHtml += '<span style="font-size:13px;font-weight:700;color:var(--txt-h)">'+(r.report_title?esc(r.report_title):catName(r.category_code))+'</span>';
+      listHtml += '<span style="font-size:10px;padding:2px 6px;border-radius:4px;font-weight:700;background:'+lvColor+'20;color:'+lvColor+'">'+lvLabel+'</span>';
+      if(r.is_persistent) listHtml += '<span style="font-size:10px;background:#FEF3C7;color:#92400e;padding:2px 6px;border-radius:4px">📌 지속관리</span>';
       listHtml += '</div>';
-      listHtml += '<div style="font-size:10px;color:var(--txt-m);flex-shrink:0;text-align:right"><div>'+esc(r.report_date)+'</div><div><span class="bdg '+(r.status==='완료'?'s-done':'s-wip')+'">'+esc(r.status)+'</span></div></div>';
-      listHtml += '</label>';
+      if(r.issue_content) listHtml += '<div style="font-size:12px;color:#dc2626;line-height:1.5;margin-bottom:3px">'+esc(r.issue_content)+'</div>';
+      if(r.next_plan) listHtml += '<div style="font-size:11px;color:var(--z-green-d)">▶ 차주: '+esc(r.next_plan.substring(0,60))+(r.next_plan.length>60?'...':'')+'</div>';
+      listHtml += '</div>';
+      listHtml += '<div style="text-align:right;flex-shrink:0;font-size:10px;color:var(--txt-m)">'+esc(r.report_date)+'</div>';
+      listHtml += '</div>';
     });
 
     wrap.innerHTML = listHtml;
@@ -3723,10 +3762,24 @@ function addItem(prefill){
   html += '<span class="tog-lbl" id="mtoglbl-'+idx+'">'+(defaultIssue?'⚠ 이슈 있음':'이슈 없음')+'</span>';
   html += '</div></div>';
 
-  // 이슈 내용
+  // 이슈 상세 + 지속관리 + 중요도
+  var defaultPersist = prefill ? !!prefill.is_persistent : false;
+  var defaultImportance = prefill ? (prefill.importance_level||1) : 1;
   html += '<div id="missue-g-'+idx+'" style="display:'+(defaultIssue?'block':'none')+'">';
-  html += '<div class="fg2"><label>이슈 상세 *</label>';
-  html += '<textarea id="missue-'+idx+'" placeholder="이슈 내용과 영향, 필요 조치 사항을 기재하세요"></textarea></div></div>';
+  html += '<div class="fg2"><label>이슈 내용 / 필요 조치</label>';
+  html += '<textarea id="missue-'+idx+'" placeholder="이슈 내용, 영향, 필요 조치를 기재하세요"></textarea></div>';
+  // 중요도 (전사회의 포함 여부)
+  html += '<div class="fg2"><label>이슈 중요도</label><div class="sel-row">';
+  html += '<button class="sel-btn '+(defaultImportance===1?'on':'')+'" id="mimp1-'+idx+'" onclick="setItemImportance('+idx+',1)">일반</button>';
+  html += '<button class="sel-btn '+(defaultImportance===2?'p2-on':'')+'" id="mimp2-'+idx+'" onclick="setItemImportance('+idx+',2)">★ 중요</button>';
+  html += '<button class="sel-btn '+(defaultImportance===3?'p3-on':'')+'" id="mimp3-'+idx+'" onclick="setItemImportance('+idx+',3)">🔴 전사회의</button>';
+  html += '</div></div>';
+  // 지속관리 체크
+  html += '<div class="fg2">';
+  html += '<div class="chk-wrap'+(defaultPersist?' on':'')+'" id="mpersist-'+idx+'" onclick="toggleItemCheck('+idx+', \'persist\')"><div class="chk-box">'+(defaultPersist?'✓':'')+'</div>';
+  html += '<span class="chk-lbl" style="font-size:12px">📌 지속 관리 필요 <span style="color:var(--txt-m);font-weight:400">(체크 시 지속이슈로 자동 등록)</span></span></div>';
+  html += '</div>';
+  html += '</div>';
 
   // 회의용 추가 속성
   var defaultCustomer = prefill ? !!prefill.customer_related : false;
@@ -3851,6 +3904,29 @@ function updUpperUI(){
   if(b) b.textContent=mUpper?'✓':'';
 }
 
+
+function setItemImportance(idx, lv){
+  for(var i=1;i<=3;i++){
+    var btn = document.getElementById('mimp'+i+'-'+idx);
+    if(!btn) continue;
+    btn.classList.remove('on','p2-on','p3-on');
+  }
+  var activeBtn = document.getElementById('mimp'+lv+'-'+idx);
+  if(activeBtn){
+    if(lv===1) activeBtn.classList.add('on');
+    else if(lv===2) activeBtn.classList.add('p2-on');
+    else activeBtn.classList.add('p3-on');
+  }
+}
+
+function getItemImportance(idx){
+  for(var i=3;i>=1;i--){
+    var btn = document.getElementById('mimp'+i+'-'+idx);
+    if(btn && (btn.classList.contains('on')||btn.classList.contains('p2-on')||btn.classList.contains('p3-on'))) return i;
+  }
+  return 1;
+}
+
 function getItemPriority(idx){
   for(var i=1;i<=3;i++){
     var btn=document.getElementById('mpb'+i+'-'+idx);
@@ -3930,6 +4006,8 @@ async function saveReport(keepOpen){
       status: getItemStatus(idx),
       is_issue: isIssue,
       issue_content: isIssue ? issueContent : null,
+      is_persistent: isIssue && getItemChecked(idx, 'persist'),
+      importance_level: isIssue ? getItemImportance(idx) : 1,
       customer_related: getItemChecked(idx, 'customer'),
       decision_required: getItemChecked(idx, 'decision'),
       is_selected_team: false,
@@ -3966,9 +4044,31 @@ async function saveReport(keepOpen){
       if(updErr) throw updErr;
       toast('업무가 수정되었습니다','ok');
     } else {
-      var {error:insErr} = await sb.from('daily_reports').insert(payloads);
-      if(insErr) throw insErr;
+      var insRes = await sb.from('daily_reports').insert(payloads).select();
+      if(insRes.error) throw insRes.error;
       toast(payloads.length+'건 등록되었습니다','ok');
+      // 지속관리 이슈 → issue_master 자동 등록
+      var savedRpts = insRes.data || [];
+      var persistRpts = savedRpts.filter(function(r){ return r.is_persistent && r.is_issue; });
+      if(persistRpts.length){
+        var issPayloads = persistRpts.map(function(r){
+          return {
+            company_code: r.company_code,
+            org_code: r.org_code,
+            owner_user_id: r.author_user_id,
+            owner_name: r.author_name,
+            issue_title: r.report_title || '이슈',
+            issue_content: r.issue_content || r.content_original,
+            category_code: r.category_code,
+            importance_level: r.importance_level || 1,
+            status: 'open',
+            start_date: r.report_date,
+            source_report_id: r.id
+          };
+        });
+        var issRes = await sb.from('issue_master').insert(issPayloads);
+        if(!issRes.error) toast(persistRpts.length+'건이 지속이슈로 자동 등록됐습니다','ok');
+      }
     }
     if(keepOpen){
       itemCount=0;
