@@ -1579,12 +1579,11 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         </div>
         <!-- 이번 주 이슈 자동 수집 -->
         <div style="margin-bottom:16px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <label style="font-size:13px;font-weight:700;color:var(--txt-h);margin:0">⚠️ 이번 주 이슈 현황 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(일일보고 이슈 자동 수집)</span></label>
             <span id="wk-issue-cnt" style="font-size:11px;color:var(--z-green-d);font-weight:700"></span>
           </div>
-          <div style="font-size:11px;color:var(--txt-m);margin-bottom:6px" id="wk-issue-desc">체크된 이슈가 주간보고에 포함됩니다</div>
-          </div>
+          <div style="font-size:11px;color:var(--txt-m);margin-bottom:8px" id="wk-issue-desc">체크된 이슈가 주간보고에 포함됩니다</div>
           <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:220px;overflow-y:auto;background:#fafafa">
             <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 이슈가 표시됩니다</div>
           </div>
@@ -1597,7 +1596,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <!-- 차주 계획 -->
         <div class="fg2" style="margin-bottom:14px">
           <label>차주 계획 <span style="color:#e53e3e;font-size:11px">*</span></label>
-          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요&#10;예) 1. 국세상담센터 재입찰 대응 (4/22)&#10;    2. 홈플러스 노무이슈 후속 조치" style="min-height:100px"></textarea>
+          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요" style="min-height:100px"></textarea>
         </div>
         <!-- 의사결정 요청 -->
         <div class="fg2" style="margin-bottom:4px">
@@ -3319,7 +3318,7 @@ function openWeeklyModal(editId){
 function closeWeeklyModal(e){
   if(e && e.target !== document.getElementById('weekly-modal-bg')) return;
   var bg = document.getElementById('weekly-modal-bg');
-  if(bg){ bg.style.display = 'none'; bg.style.removeProperty('display'); bg.style.display = 'none'; }
+  if(bg) bg.style.display = 'none';
 }
 
 // 선택된 주차의 일일보고 목록 로드
@@ -3362,7 +3361,11 @@ async function loadWeeklyDailyList(){
     var lv = CU.position_level || 1;
     if(lv >= 5){
       // 전략기획실장: 전 계열사 (본인 제외)
+      // company_code 필터 없이 전체 조회 (RLS 정책에 따라)
       q = q.neq('author_user_id', CU.user_id);
+    } else if(lv >= 3){
+      // 실장/사업부장: 같은 계열사 전체
+      q = q.eq('company_code', CU.company_code);
     } else if(lv >= 2){
       // 팀장 이상: 하위 조직 + 본인
       var managedOrgs = getManagedOrgCodes(currentOrgCode());
@@ -3380,7 +3383,7 @@ async function loadWeeklyDailyList(){
     if(cntEl) cntEl.textContent = rpts.length ? rpts.length+'건' : '이슈 없음';
 
     if(!rpts.length){
-      wrap.innerHTML = '<div style="padding:24px;text-align:center;color:var(--txt-m);font-size:13px">이번 주 등록된 이슈가 없습니다<br><span style="font-size:11px;margin-top:4px;display:block">일일보고에서 이슈 체크 후 등록하면 여기에 표시됩니다</span></div>';
+      wrap.innerHTML = '<div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">이번 주 이슈가 없습니다<br><span style="font-size:11px;margin-top:6px;display:block;line-height:1.6">업무 등록 시 <strong>이슈 체크 → 이슈 내용 입력</strong>하면<br>여기에 자동으로 수집됩니다</span></div>';
       return;
     }
 
@@ -4050,7 +4053,7 @@ function addItem(prefill){
   // 제목 (핵심 업무명)
   var defaultTitle = prefill ? (prefill.report_title||'') : '';
   html += '<div class="fg2"><label>업무 제목 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">거래처명·프로젝트명 등 핵심 업무명 (1줄)</span></label>';
-  html += '<input id="mtitle-'+idx+'" placeholder="예) 국세상담센터 재입찰 제안서 작성" value="'+esc(defaultTitle)+'" style="width:100%"></div>';
+  html += '<input id="mtitle-'+idx+'" placeholder="거래처명·프로젝트명 등 핵심 업무명" value="'+esc(defaultTitle)+'" style="width:100%"></div>';
 
   // 금주 실행 내용
   html += '<div class="fg2"><label>금주 실행 내용 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">실제로 한 것, 현황, 결과</span></label>';
