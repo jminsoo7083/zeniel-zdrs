@@ -1343,14 +1343,15 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <div style="display:flex;gap:8px;align-items:center">
           <div>
             <div class="date-quick-wrap">
-              <button class="date-quick-btn" onclick="setDateRange('rv','today')">오늘</button>
-              <button class="date-quick-btn" onclick="setDateRange('rv','week')">이번주</button>
-              <button class="date-quick-btn" onclick="setDateRange('rv','month')">이번달</button>
+              <button class="date-quick-btn" id="rv-q-today" onclick="setDateRange('rv','today')">오늘</button>
+              <button class="date-quick-btn" id="rv-q-week" onclick="setDateRange('rv','week')">이번주</button>
+              <button class="date-quick-btn" id="rv-q-month" onclick="setDateRange('rv','month')">이번달</button>
             </div>
             <div class="date-range-row">
               <input type="date" id="f-rv-date-from" onchange="loadReview()">
               <span style="color:var(--txt-m);font-size:12px">~</span>
               <input type="date" id="f-rv-date-to" onchange="loadReview()">
+              <button class="btn btn-ghost btn-sm" onclick="loadReview()">조회</button>
             </div>
           </div>
           <button class="btn btn-primary btn-sm" onclick="go('my')">내 업무 작성</button>
@@ -1401,14 +1402,15 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <div style="display:flex;gap:8px;align-items:center">
           <div>
             <div class="date-quick-wrap">
-              <button class="date-quick-btn" onclick="setDateRange('dp','today')">오늘</button>
-              <button class="date-quick-btn" onclick="setDateRange('dp','week')">이번주</button>
-              <button class="date-quick-btn" onclick="setDateRange('dp','month')">이번달</button>
+              <button class="date-quick-btn" id="dp-q-today" onclick="setDateRange('dp','today')">오늘</button>
+              <button class="date-quick-btn" id="dp-q-week" onclick="setDateRange('dp','week')">이번주</button>
+              <button class="date-quick-btn" id="dp-q-month" onclick="setDateRange('dp','month')">이번달</button>
             </div>
             <div class="date-range-row">
               <input type="date" id="f-dp-date-from" onchange="loadDept()">
               <span style="color:var(--txt-m);font-size:12px">~</span>
               <input type="date" id="f-dp-date-to" onchange="loadDept()">
+              <button class="btn btn-ghost btn-sm" onclick="loadDept()">조회</button>
             </div>
           </div>
         </div>
@@ -1847,7 +1849,6 @@ window.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('app').style.display='none';
   setHeaderInfo();
   document.getElementById('m-date').value = today();
-  document.getElementById('f-my-date').value = today();
   var _td = today();
   var _frvf = document.getElementById('f-rv-date-from');
   var _frvt = document.getElementById('f-rv-date-to');
@@ -2119,9 +2120,7 @@ async function enterApp(){
   if(fromEl) fromEl.value = todayVal;
   if(toEl)   toEl.value   = todayVal;
 
-  ;['f-rv-date','f-dp-date'].forEach(function(id){
-    var el=document.getElementById(id); if(el&&!el.value) el.value=t;
-  });
+  
 
   // ── 직급별 기본 화면 분기 ──
   // lv 1: 내 업무일지
@@ -2456,7 +2455,8 @@ async function loadReview(){
     try{
       var myQ = sb.from('daily_reports').select('*')
         .eq('author_user_id', CU.user_id || CU.id)
-        .eq('report_date', date)
+        .gte('report_date', dateFrom)
+        .lte('report_date', dateTo)
         .order('created_at',{ascending:false});
       var myRes = await myQ;
       if(myRes && myRes.data) myRpts = myRes.data;
@@ -2494,7 +2494,8 @@ async function loadReview(){
     try{
       var q = sb.from('daily_reports')
         .select('*')
-        .eq('report_date',date)
+        .gte('report_date', dateFrom)
+        .lte('report_date', dateTo)
         .order('priority_original',{ascending:false})
         .order('created_at',{ascending:false});
 
@@ -3890,9 +3891,14 @@ function addItem(prefill){
   html += '<option value="">선택하세요</option>'+catOpts;
   html += '</select></div>';
 
-  // 업무 내용
-  html += '<div class="fg2"><label>업무 내용 *</label>';
-  html += '<textarea id="mcontent-'+idx+'" placeholder="업무 내용, 결과, 다음 조치 순으로 간략히 기재하세요"></textarea></div>';
+  // 제목 (핵심 업무명)
+  var defaultTitle = prefill ? (prefill.report_title||'') : '';
+  html += '<div class="fg2"><label>업무 제목 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">거래처명·프로젝트명 등 핵심 업무명 (1줄)</span></label>';
+  html += '<input id="mtitle-'+idx+'" placeholder="예) 국세상담센터 재입찰 제안서 작성" value="'+esc(defaultTitle)+'" style="width:100%"></div>';
+
+  // 금주 실행 내용
+  html += '<div class="fg2"><label>금주 실행 내용 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">실제로 한 것, 현황, 결과</span></label>';
+  html += '<textarea id="mcontent-'+idx+'" placeholder="이번 주 실제로 진행한 내용, 현재 상태, 결과를 기재하세요"></textarea></div>';
 
   // 우선순위
   html += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
@@ -4128,7 +4134,9 @@ async function saveReport(keepOpen){
     var cat = catEl ? catEl.value : '';
     var content = contEl ? contEl.value.trim() : '';
 
-    if(!content){ toast((i+1)+'번 업무 내용을 입력하세요','err'); valid=false; break; }
+    var titleCheckEl = document.getElementById('mtitle-'+idx);
+    if(!titleCheckEl || !titleCheckEl.value.trim()){ toast((i+1)+'번 업무 제목을 입력하세요','err'); valid=false; break; }
+    if(!content){ toast((i+1)+'번 금주 실행 내용을 입력하세요','err'); valid=false; break; }
     if(!cat){ toast((i+1)+'번 카테고리를 선택하세요','err'); valid=false; break; }
 
     var isIssue = document.getElementById('mtog-'+idx) && document.getElementById('mtog-'+idx).classList.contains('on');
@@ -4150,7 +4158,7 @@ async function saveReport(keepOpen){
       author_position_level: CU.position_level,
       company_code: CU.company_code,
       org_code: currentOrgCode(),
-      report_title: titleEl ? titleEl.value.trim() : null,
+      report_title: (titleEl && titleEl.value.trim()) ? titleEl.value.trim() : (content.length>40?content.substring(0,40)+'…':content),
       category_code: cat,
       content_original: content,
       next_plan: nextEl ? nextEl.value.trim() : null,
