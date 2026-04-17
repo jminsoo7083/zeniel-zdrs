@@ -1102,6 +1102,23 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
     max-height:92vh !important;
   }
 }
+
+/* 날짜 필터 빠른선택 */
+.date-quick-wrap { display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.date-quick-btn {
+  padding:5px 10px; border:1.5px solid var(--border); border-radius:6px;
+  font-size:11px; font-weight:600; color:var(--txt-s); background:#fff;
+  cursor:pointer; transition:all .15s; white-space:nowrap;
+}
+.date-quick-btn.on {
+  background:var(--z-green); color:#fff; border-color:var(--z-green);
+}
+.date-quick-btn:hover { border-color:var(--z-green); color:var(--z-green-d); }
+.date-range-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.date-range-row input[type=date] { width:130px; padding:6px 8px; border:1.5px solid var(--border); border-radius:8px; font-size:12px; }
+@media(max-width:600px){
+  .date-range-row input[type=date] { width:110px; font-size:11px; }
+}
 </style>
 </head>
 <body>
@@ -1124,6 +1141,10 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
       <input type="password" id="lpw" placeholder="비밀번호" autocomplete="current-password">
     </div>
     <div class="login-err" id="lerr"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+      <input type="checkbox" id="chk-remember" style="width:16px;height:16px;cursor:pointer;accent-color:var(--z-green)">
+      <label for="chk-remember" style="font-size:12px;color:var(--txt-s);cursor:pointer">아이디 · 비밀번호 저장</label>
+    </div>
     <button class="btn-login" onclick="doLogin()">로 그 인</button>
     <div class="login-hint">운영 시 Supabase Auth 이메일 · 비밀번호를 사용합니다<br></div>
     <div style="margin-top:20px;text-align:center;font-size:9px;color:#ddd;letter-spacing:.5px">ⓟ 정민수 · 제니엘그룹 전략기획실 · 2026</div>
@@ -1242,18 +1263,27 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <div class="kpi red"><div class="kpi-lbl">이슈</div><div class="kpi-val" id="k-issue">0</div><div class="kpi-sub">건</div></div>
       </div>
 
-      <div class="fbar" style="flex-wrap:wrap;gap:6px">
-        <span class="fbar-lbl">기간</span>
-        <input type="date" id="f-my-date-from" onchange="loadMy()" style="width:130px">
-        <span style="color:var(--txt-m);font-size:12px">~</span>
-        <input type="date" id="f-my-date-to" onchange="loadMy()" style="width:130px">
-        <span class="fbar-lbl">카테고리</span>
-        <select id="f-my-cat" onchange="loadMy()"><option value="">전체</option></select>
-        <span class="fbar-lbl">상태</span>
-        <select id="f-my-status" onchange="loadMy()">
-          <option value="">전체</option>
-          <option>완료</option><option>진행</option><option>이월</option>
-        </select>
+      <div style="margin-bottom:10px">
+        <div class="date-quick-wrap" style="margin-bottom:6px">
+          <button class="date-quick-btn on" id="my-q-today" onclick="setDateRange('my','today')">오늘</button>
+          <button class="date-quick-btn" id="my-q-week" onclick="setDateRange('my','week')">이번주</button>
+          <button class="date-quick-btn" id="my-q-month" onclick="setDateRange('my','month')">이번달</button>
+          <button class="date-quick-btn" id="my-q-custom" onclick="setDateRange('my','custom')">직접설정</button>
+        </div>
+        <div class="fbar" style="flex-wrap:wrap;gap:6px">
+          <div class="date-range-row" style="margin-top:0">
+            <input type="date" id="f-my-date-from" onchange="setDateRange('my','custom');loadMy()">
+            <span style="color:var(--txt-m);font-size:12px">~</span>
+            <input type="date" id="f-my-date-to" onchange="setDateRange('my','custom');loadMy()">
+          </div>
+          <span class="fbar-lbl">카테고리</span>
+          <select id="f-my-cat" onchange="loadMy()"><option value="">전체</option></select>
+          <span class="fbar-lbl">상태</span>
+          <select id="f-my-status" onchange="loadMy()">
+            <option value="">전체</option>
+            <option>완료</option><option>진행</option><option>이월</option>
+          </select>
+        </div>
       </div>
 
       <div class="card">
@@ -1311,8 +1341,18 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
           <div class="pg-sub" id="review-sub">하위 보고를 확인하고 상향 여부를 결정합니다</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="f-rv-date" class="fbar-input">
-          <button class="btn btn-ghost" onclick="loadReview()">조회</button>
+          <div>
+            <div class="date-quick-wrap">
+              <button class="date-quick-btn" onclick="setDateRange('rv','today')">오늘</button>
+              <button class="date-quick-btn" onclick="setDateRange('rv','week')">이번주</button>
+              <button class="date-quick-btn" onclick="setDateRange('rv','month')">이번달</button>
+            </div>
+            <div class="date-range-row">
+              <input type="date" id="f-rv-date-from" onchange="loadReview()">
+              <span style="color:var(--txt-m);font-size:12px">~</span>
+              <input type="date" id="f-rv-date-to" onchange="loadReview()">
+            </div>
+          </div>
           <button class="btn btn-primary btn-sm" onclick="go('my')">내 업무 작성</button>
         </div>
       </div>
@@ -1359,8 +1399,18 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
           <div class="pg-sub">상위 전달 확정된 보고를 부서 단위로 집약합니다</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
-          <input type="date" id="f-dp-date" class="fbar-input">
-          <button class="btn btn-ghost" onclick="loadDept()">조회</button>
+          <div>
+            <div class="date-quick-wrap">
+              <button class="date-quick-btn" onclick="setDateRange('dp','today')">오늘</button>
+              <button class="date-quick-btn" onclick="setDateRange('dp','week')">이번주</button>
+              <button class="date-quick-btn" onclick="setDateRange('dp','month')">이번달</button>
+            </div>
+            <div class="date-range-row">
+              <input type="date" id="f-dp-date-from" onchange="loadDept()">
+              <span style="color:var(--txt-m);font-size:12px">~</span>
+              <input type="date" id="f-dp-date-to" onchange="loadDept()">
+            </div>
+          </div>
         </div>
       </div>
       <div id="dept-body">
@@ -1508,7 +1558,7 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 </div>
 
 <!-- 주간보고 작성 모달 -->
-  <div id="weekly-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box" onclick="closeWeeklyModal(event)">
+  <div id="weekly-modal-bg" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;flex-direction:row" onclick="closeWeeklyModal(event)">
     <div style="background:#fff;border-radius:16px;width:min(680px,100%);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.25)" onclick="event.stopPropagation()">
       <!-- 헤더 고정 -->
       <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:#fff">
@@ -1798,8 +1848,19 @@ window.addEventListener('DOMContentLoaded', async function() {
   setHeaderInfo();
   document.getElementById('m-date').value = today();
   document.getElementById('f-my-date').value = today();
-  document.getElementById('f-rv-date').value = today();
-  document.getElementById('f-dp-date').value = today();
+  var _td = today();
+  var _frvf = document.getElementById('f-rv-date-from');
+  var _frvt = document.getElementById('f-rv-date-to');
+  var _fdpf = document.getElementById('f-dp-date-from');
+  var _fdpt = document.getElementById('f-dp-date-to');
+  if(_frvf) _frvf.value = _td;
+  if(_frvt) _frvt.value = _td;
+  if(_fdpf) _fdpf.value = _td;
+  if(_fdpt) _fdpt.value = _td;
+  // 내 업무일지 기본: 오늘
+  setDateRange('my','today');
+  // 저장된 로그인 정보 불러오기
+  loadLoginInfo();
 
   if(sb){
     // onAuthStateChange: 세션 만료/탭 전환/로그아웃 자동 감지
@@ -1893,6 +1954,89 @@ async function loadCurrentUserProfile(authUserId){
   }
 }
 
+
+// ══════════════════════════════════════════════
+// 날짜 범위 빠른선택
+// ══════════════════════════════════════════════
+function setDateRange(panel, mode){
+  var t = today();
+  var fromVal = t, toVal = t;
+
+  if(mode === 'week'){
+    var d = new Date();
+    var day = d.getDay() || 7;
+    var mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+    var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+    fromVal = mon.toISOString().split('T')[0];
+    toVal   = sun.toISOString().split('T')[0];
+  } else if(mode === 'month'){
+    var dm = new Date();
+    fromVal = dm.getFullYear()+'-'+pad(dm.getMonth()+1)+'-01';
+    var lastDay = new Date(dm.getFullYear(), dm.getMonth()+1, 0).getDate();
+    toVal = dm.getFullYear()+'-'+pad(dm.getMonth()+1)+'-'+pad(lastDay);
+  }
+
+  // 버튼 on/off
+  var prefix = panel === 'my' ? 'my-q-' : '';
+  if(prefix){
+    var btns = ['today','week','month','custom'];
+    btns.forEach(function(b){
+      var el = document.getElementById(prefix+b);
+      if(el) el.classList.toggle('on', b===mode);
+    });
+  }
+
+  // 날짜 적용
+  var fromId = 'f-'+panel+'-date-from';
+  var toId   = 'f-'+panel+'-date-to';
+  var fromEl = document.getElementById(fromId);
+  var toEl   = document.getElementById(toId);
+  if(fromEl) fromEl.value = fromVal;
+  if(toEl)   toEl.value   = toVal;
+
+  // 조회 실행
+  if(panel==='my') loadMy();
+  else if(panel==='rv') loadReview();
+  else if(panel==='dp') loadDept();
+}
+
+// ══════════════════════════════════════════════
+// 로그인 정보 저장 (localStorage)
+// ══════════════════════════════════════════════
+function saveLoginInfo(){
+  var remEl = document.getElementById('chk-remember');
+  if(!remEl || !remEl.checked) return;
+  var id = document.getElementById('lid').value;
+  var pw = document.getElementById('lpw').value;
+  try{
+    localStorage.setItem('zdrs_saved_id', id);
+    localStorage.setItem('zdrs_saved_pw', pw);
+    localStorage.setItem('zdrs_remember', '1');
+  }catch(e){}
+}
+
+function loadLoginInfo(){
+  try{
+    var remember = localStorage.getItem('zdrs_remember');
+    if(remember === '1'){
+      var savedId = localStorage.getItem('zdrs_saved_id');
+      var savedPw = localStorage.getItem('zdrs_saved_pw');
+      var remEl = document.getElementById('chk-remember');
+      if(savedId) document.getElementById('lid').value = savedId;
+      if(savedPw) document.getElementById('lpw').value = savedPw;
+      if(remEl) remEl.checked = true;
+    }
+  }catch(e){}
+}
+
+function clearLoginInfo(){
+  try{
+    localStorage.removeItem('zdrs_saved_id');
+    localStorage.removeItem('zdrs_saved_pw');
+    localStorage.removeItem('zdrs_remember');
+  }catch(e){}
+}
+
 async function doLogin(){
   var id=document.getElementById('lid').value.trim();
   var pw=document.getElementById('lpw').value;
@@ -1934,6 +2078,7 @@ async function doLogout(){
 // 앱 진입
 // ══════════════════════════════════════════════
 async function enterApp(){
+  saveLoginInfo();
   document.getElementById('login-wrap').style.display='none';
   document.getElementById('app').style.display='block';
   var u=CU;
@@ -2297,7 +2442,11 @@ function renderMy(rpts){
 // ══════════════════════════════════════════════
 
 async function loadReview(){
-  var date=document.getElementById('f-rv-date').value;
+  var _rfEl = document.getElementById('f-rv-date-from');
+  var _rtEl = document.getElementById('f-rv-date-to');
+  var dateFrom = _rfEl ? _rfEl.value : today();
+  var dateTo   = _rtEl ? _rtEl.value : today();
+  var date = dateFrom; // 기존 호환용
 
   // 내 오늘 업무 요약 표시
   var myRpts = [];
@@ -2541,7 +2690,11 @@ async function loadIssues(){
 // 부서 집약
 // ══════════════════════════════════════════════
 async function loadDept(){
-  var date=document.getElementById('f-dp-date').value;
+  var _dfEl = document.getElementById('f-dp-date-from');
+  var _dtEl = document.getElementById('f-dp-date-to');
+  var dateFrom = _dfEl ? _dfEl.value : today();
+  var dateTo   = _dtEl ? _dtEl.value : today();
+  var date = dateFrom;
   var rpts=[];
   if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_escalated_to_meeting); }
   else{
@@ -3149,7 +3302,7 @@ function openWeeklyModal(editId){
   document.getElementById('wk-decision').value = '';
   document.getElementById('weekly-modal-bg').dataset.editId = editId || '';
   loadWeeklyDailyList();
-  document.getElementById('weekly-modal-bg').style.display = 'flex';
+  document.getElementById('weekly-modal-bg').style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
 }
 
 function closeWeeklyModal(e){
@@ -3326,7 +3479,7 @@ async function editWeeklyReport(id){
     document.getElementById('wk-next-plan').value = r.next_week_plan || '';
     document.getElementById('wk-decision').value = r.decision_request || '';
     document.getElementById('weekly-modal-bg').dataset.editId = id;
-    document.getElementById('weekly-modal-bg').style.display = 'flex';
+    document.getElementById('weekly-modal-bg').style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
 
     await loadWeeklyDailyList();
 
