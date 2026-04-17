@@ -1859,8 +1859,12 @@ window.addEventListener('DOMContentLoaded', async function() {
   if(_frvt) _frvt.value = _td;
   if(_fdpf) _fdpf.value = _td;
   if(_fdpt) _fdpt.value = _td;
-  // 내 업무일지 기본: 오늘
-  setDateRange('my','today');
+  // 내 업무일지 기본 날짜만 설정 (로그인 전이므로 loadMy 호출 안 함)
+  var _todayVal = today();
+  var _fmyf = document.getElementById('f-my-date-from');
+  var _fmyt = document.getElementById('f-my-date-to');
+  if(_fmyf) _fmyf.value = _todayVal;
+  if(_fmyt) _fmyt.value = _todayVal;
   // 저장된 로그인 정보 불러오기
   loadLoginInfo();
 
@@ -1961,6 +1965,27 @@ async function loadCurrentUserProfile(authUserId){
 // 날짜 범위 빠른선택
 // ══════════════════════════════════════════════
 function setDateRange(panel, mode){
+  // 로그인 전 호출 방지
+  if(!CU && (panel==='my' || panel==='rv' || panel==='dp')) {
+    // 날짜만 설정하고 조회는 생략
+    var t = today(), fromVal = t, toVal = t;
+    if(mode==='week'){
+      var d=new Date(); var day=d.getDay()||7;
+      var mon=new Date(d); mon.setDate(d.getDate()-day+1);
+      var sun=new Date(mon); sun.setDate(mon.getDate()+6);
+      fromVal=mon.toISOString().split('T')[0]; toVal=sun.toISOString().split('T')[0];
+    } else if(mode==='month'){
+      var dm=new Date();
+      fromVal=dm.getFullYear()+'-'+pad(dm.getMonth()+1)+'-01';
+      var lastDay=new Date(dm.getFullYear(),dm.getMonth()+1,0).getDate();
+      toVal=dm.getFullYear()+'-'+pad(dm.getMonth()+1)+'-'+pad(lastDay);
+    }
+    var fEl=document.getElementById('f-'+panel+'-date-from');
+    var tEl=document.getElementById('f-'+panel+'-date-to');
+    if(fEl) fEl.value=fromVal;
+    if(tEl) tEl.value=toVal;
+    return;
+  }
   var t = today();
   var fromVal = t, toVal = t;
 
@@ -2361,6 +2386,7 @@ async function checkDueTasks(){
 }
 
 async function loadMy(){
+  if(!CU) return; // 로그인 전 호출 방지
   var _dfEl = document.getElementById('f-my-date-from'); var dateFrom = _dfEl ? _dfEl.value : '';
   var _dtEl = document.getElementById('f-my-date-to'); var dateTo = _dtEl ? _dtEl.value : '';
   var cat = document.getElementById('f-my-cat').value;
@@ -2442,6 +2468,7 @@ function renderMy(rpts){
 // ══════════════════════════════════════════════
 
 async function loadReview(){
+  if(!CU) return;
   var _rfEl = document.getElementById('f-rv-date-from');
   var _rtEl = document.getElementById('f-rv-date-to');
   var dateFrom = _rfEl ? _rfEl.value : today();
@@ -2692,6 +2719,7 @@ async function loadIssues(){
 // 부서 집약
 // ══════════════════════════════════════════════
 async function loadDept(){
+  if(!CU) return;
   var _dfEl = document.getElementById('f-dp-date-from');
   var _dtEl = document.getElementById('f-dp-date-to');
   var dateFrom = _dfEl ? _dfEl.value : today();
@@ -3349,37 +3377,39 @@ async function loadWeeklyDailyList(){
   }
 
   try{
+    // 권한별 조회 범위 - is_issue 필터 없이 전체 조회 후 클라이언트 필터
+    var lv = CU.position_level || 1;
     var q = sb.from('daily_reports')
-      .select('id,report_date,report_title,content_original,issue_content,category_code,status,next_plan,is_issue,is_persistent,importance_level,author_name,author_user_id,org_code')
-      .eq('is_issue', true)
+      .select('id,report_date,report_title,content_original,issue_content,category_code,status,next_plan,is_issue,is_persistent,importance_level,author_name,author_user_id,org_code,company_code')
       .gte('report_date', startStr)
       .lte('report_date', endStr)
       .order('importance_level', {ascending:false})
       .order('report_date', {ascending:true});
 
-    // 권한별 조회 범위
-    var lv = CU.position_level || 1;
     if(lv >= 5){
-      // 전략기획실장: 전 계열사 (본인 제외)
-      // company_code 필터 없이 전체 조회 (RLS 정책에 따라)
       q = q.neq('author_user_id', CU.user_id);
     } else if(lv >= 3){
-      // 실장/사업부장: 같은 계열사 전체
-      q = q.eq('company_code', CU.company_code);
+      q = q.eq('company_code', CU.company_code).neq('author_user_id', CU.user_id);
     } else if(lv >= 2){
-      // 팀장 이상: 하위 조직 + 본인
       var managedOrgs = getManagedOrgCodes(currentOrgCode());
       if(managedOrgs.length){
-        managedOrgs.push(currentOrgCode()); // 본인 조직 포함
+        managedOrgs.push(currentOrgCode());
         q = q.in('org_code', managedOrgs);
       }
     } else {
-      // 팀원: 본인만
       q = q.eq('author_user_id', CU.user_id);
     }
 
     var res = await q;
-    var rpts = (res && res.data) ? res.data : [];
+    var allWeekRpts = (res && res.data) ? res.data : [];
+
+    // 이슈 있는 것만 필터 (클라이언트 사이드)
+    var rpts = allWeekRpts.filter(function(r){ return r.is_issue; });
+
+    // 이슈가 하나도 없으면 중요도 2 이상 전체 보고도 포함
+    if(!rpts.length){
+      rpts = allWeekRpts.filter(function(r){ return r.importance_level >= 2; });
+    }
     if(cntEl) cntEl.textContent = rpts.length ? rpts.length+'건' : '이슈 없음';
 
     if(!rpts.length){
