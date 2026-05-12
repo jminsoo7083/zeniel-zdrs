@@ -1119,6 +1119,122 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 @media(max-width:600px){
   .date-range-row input[type=date] { width:110px; font-size:11px; }
 }
+
+/* ── 전체 가시성 개선 ── */
+
+/* 섹션 헤더 강화 */
+.pg-hdr {
+  padding: 20px 24px 16px;
+  border-bottom: 2px solid var(--z-green-s);
+  background: #fff;
+  margin-bottom: 0;
+}
+.pg-title {
+  font-size: 22px !important;
+  font-weight: 800 !important;
+  color: var(--txt-h) !important;
+  letter-spacing: -.3px;
+}
+.pg-sub {
+  font-size: 12px;
+  color: var(--txt-m);
+  margin-top: 3px;
+}
+
+/* 패널 패딩 */
+.panel.on { padding: 0; }
+.panel.on > *:not(.pg-hdr) { padding-left: 24px; padding-right: 24px; }
+
+/* 카드 강화 */
+.card {
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05) !important;
+  overflow: hidden;
+  margin-bottom: 12px;
+  background: #fff;
+}
+.card-hdr {
+  padding: 14px 18px !important;
+  background: var(--z-green-s) !important;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-ttl {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: var(--txt-h) !important;
+}
+
+/* 필터바 강화 */
+.fbar {
+  background: #fff;
+  padding: 14px 24px !important;
+  border-bottom: 1px solid var(--border);
+  gap: 10px !important;
+}
+
+/* 배지 강화 */
+.bdg {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  padding: 3px 9px !important;
+  border-radius: 20px !important;
+}
+.bdg-issue { background: #FEE2E2 !important; color: #DC2626 !important; }
+.bdg-stage { background: var(--z-green-s) !important; color: var(--z-green-d) !important; }
+.bdg-urgent { background: #FEE2E2 !important; color: #DC2626 !important; }
+
+/* 사람별 그룹 헤더 */
+.person-group-hdr {
+  padding: 14px 18px !important;
+  background: #fff !important;
+  border-bottom: 1px solid var(--border);
+}
+.person-group-hdr:hover { background: var(--z-green-s) !important; }
+
+/* 테이블 가시성 */
+.tbl th {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--txt-m) !important;
+  background: var(--z-green-s) !important;
+  padding: 10px 12px !important;
+  letter-spacing: .3px;
+  text-transform: uppercase;
+}
+.tbl td {
+  padding: 11px 12px !important;
+  font-size: 12px !important;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.tbl tr:hover td { background: #f9fafb; }
+
+/* 사이드바 섹션 라벨 */
+.sdb-section-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--txt-m);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 14px 20px 6px;
+}
+
+/* 네비 활성 상태 강화 */
+.nav.on {
+  background: var(--z-green-s) !important;
+  color: var(--z-green) !important;
+  font-weight: 700 !important;
+  border-left: 3px solid var(--z-green) !important;
+}
+
+/* 주간보고 모바일 2컬럼 → 1컬럼 */
+@media(max-width:768px){
+  .weekly-2col { grid-template-columns: 1fr !important; }
+}
 </style>
 </head>
 <body>
@@ -3253,92 +3369,105 @@ async function loadWeekly(){
 async function loadWeeklyDetail(){
   var sel = document.getElementById('wk-sel');
   if(!sel) return;
-  var wkVal = sel.value; // "2026-16"
+  var wkVal = sel.value;
   var parts = wkVal.split('-');
   var yr = parseInt(parts[0]);
   var wk = parseInt(parts[1]);
-
   var wrap = document.getElementById('weekly-detail');
   var emptyEl = document.getElementById('weekly-empty');
   if(!wrap) return;
-
-  if(!sb){
-    wrap.innerHTML = '';
-    if(emptyEl) emptyEl.style.display = 'block';
-    return;
-  }
-
+  if(!sb){ wrap.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
   try{
     var res = await sb.from('weekly_reports')
-      .select('*')
-      .eq('author_user_id', CU.user_id)
-      .eq('year_num', yr)
-      .eq('week_number', wk)
-      .order('created_at', {ascending:false})
-      .limit(1);
+      .select('*').eq('author_user_id', CU.user_id)
+      .eq('year_num', yr).eq('week_number', wk)
+      .order('created_at',{ascending:false}).limit(1);
+    var report = (res&&res.data&&res.data.length)?res.data[0]:null;
+    if(!report){ wrap.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
+    if(emptyEl) emptyEl.style.display='none';
 
-    var report = (res && res.data && res.data.length) ? res.data[0] : null;
-
-    if(!report){
-      wrap.innerHTML = '';
-      if(emptyEl) emptyEl.style.display = 'block';
-      return;
-    }
-
-    if(emptyEl) emptyEl.style.display = 'none';
-
-    // 연결된 일일보고 조회
     var itemRes = await sb.from('weekly_report_items')
       .select('*,daily_reports(*)')
       .eq('weekly_report_id', report.id);
-    var items = (itemRes && itemRes.data) ? itemRes.data : [];
+    var items = (itemRes&&itemRes.data)?itemRes.data:[];
 
-    var html = '<div class="card" style="margin-bottom:12px">';
-    html += '<div class="card-hdr"><span class="card-ttl">'+esc(report.week_label||'주간 보고')+'</span>';
-    html += '<div style="display:flex;gap:8px">';
-    html += '<span class="bdg bdg-stage">'+esc(report.stage||'draft')+'</span>';
-    html += '<button class="btn btn-ghost btn-sm" onclick="editWeeklyReport('+report.id+')">수정</button>';
-    html += '</div></div>';
-    html += '<div style="padding:0 16px 16px">';
+    // 카테고리별 금주 업무 그룹핑
+    var catGroups = {};
+    var catOrder = [];
+    items.forEach(function(item){
+      var dr = item.daily_reports;
+      if(!dr) return;
+      var cat = dr.category_code||'ADMIN';
+      if(!catGroups[cat]){ catGroups[cat]=[]; catOrder.push(cat); }
+      catGroups[cat].push({dr:dr, edited:item.edited_content||''});
+    });
 
-    // 포함된 일일보고 목록
-    if(items.length){
-      html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--txt-m);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">이번 주 업무</div>';
-      items.forEach(function(item){
-        var dr = item.daily_reports;
-        if(!dr) return;
-        var content = item.edited_content || dr.content_original || '';
-        html += '<div style="padding:10px 12px;background:#f8faf9;border-radius:8px;margin-bottom:6px;border-left:3px solid var(--z-green)">';
-        html += '<div style="font-size:12px;font-weight:700;color:var(--txt-h);margin-bottom:2px">'+(dr.report_title?esc(dr.report_title):catName(dr.category_code))+'</div>';
-        html += '<div style="font-size:12px;color:var(--txt-b);line-height:1.5">'+esc(content)+'</div>';
-        html += '<div style="font-size:10px;color:var(--txt-m);margin-top:4px">'+esc(dr.report_date||'')+'</div>';
-        html += '</div>';
+    var h = '';
+    h += '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.07)">';
+
+    // 타이틀바
+    h += '<div style="background:linear-gradient(135deg,#1B6B3A 0%,#0f4d2a 100%);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
+    h += '<div><div style="font-size:16px;font-weight:800;color:#fff">📋 '+esc(report.week_label||'주간보고')+'</div>';
+    h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(CU.name||'')+' · '+esc(CU.position_name||'전략기획실장')+'</div></div>';
+    h += '<div style="display:flex;gap:8px;align-items:center">';
+    h += '<span style="font-size:11px;background:rgba(255,255,255,.2);color:#fff;padding:3px 10px;border-radius:20px">'+(report.stage==='submitted'?'제출완료':'임시저장')+'</span>';
+    h += '<button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="editWeeklyReport('+report.id+')">수정</button>';
+    h += '</div></div>';
+
+    // 2컬럼 본문
+    h += '<div class="weekly-2col" style="display:grid;grid-template-columns:1fr 1fr">';
+
+    // 좌: 금주 업무결과
+    h += '<div style="padding:20px;border-right:1px solid var(--border)">';
+    h += '<div style="font-size:12px;font-weight:800;color:#1B6B3A;margin-bottom:14px;display:flex;align-items:center;gap:6px">';
+    h += '<span style="background:#1B6B3A;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px">금주</span> 업무 결과</div>';
+
+    if(catOrder.length){
+      catOrder.forEach(function(cat){
+        var grp = catGroups[cat];
+        h += '<div style="margin-bottom:14px">';
+        h += '<div style="font-size:11px;font-weight:700;color:var(--txt-m);margin-bottom:6px;display:flex;align-items:center;gap:5px">';
+        h += '<span style="width:6px;height:6px;background:#1B6B3A;border-radius:50%;display:inline-block"></span>'+catName(cat)+'</div>';
+        grp.forEach(function(g){
+          var dr = g.dr;
+          var content = g.edited||dr.content_original||'';
+          var stC = dr.status==='완료'?'#065f46':dr.status==='이월'?'#92400e':'#1e3a5f';
+          var stB = dr.status==='완료'?'#D1FAE5':dr.status==='이월'?'#FEF3C7':'#EFF6FF';
+          h += '<div style="padding:9px 12px;background:#f8faf9;border-radius:8px;margin-bottom:6px;border-left:3px solid #1B6B3A">';
+          h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px">';
+          h += '<div style="font-size:12px;font-weight:700;color:#0f1f17;flex:1">'+(dr.report_title?esc(dr.report_title):catName(dr.category_code))+'</div>';
+          h += '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+stB+';color:'+stC+';flex-shrink:0">'+esc(dr.status||'진행')+'</span>';
+          h += '</div>';
+          h += '<div style="font-size:11px;color:#374151;line-height:1.6">'+esc(content)+'</div>';
+          if(dr.is_issue&&dr.issue_content) h += '<div style="font-size:10px;color:#dc2626;background:#fef2f2;padding:3px 7px;border-radius:4px;margin-top:4px">⚠ '+esc(dr.issue_content)+'</div>';
+          h += '</div>';
+        });
+        h += '</div>';
       });
-      html += '</div>';
+    } else if(report.summary){
+      h += '<div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap">'+esc(report.summary)+'</div>';
+    } else {
+      h += '<div style="color:var(--txt-m);font-size:12px;padding:20px 0;text-align:center">등록된 업무 항목이 없습니다</div>';
     }
+    h += '</div>';
 
-    // 이번 주 요약
-    if(report.summary){
-      html += '<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:700;color:var(--txt-m);margin-bottom:6px">이번 주 요약</div>';
-      html += '<div style="font-size:13px;color:var(--txt-b);line-height:1.65;white-space:pre-wrap">'+esc(report.summary)+'</div></div>';
-    }
-
-    // 차주 계획
+    // 우: 차주 업무계획
+    h += '<div style="padding:20px;background:#fafcff">';
+    h += '<div style="font-size:12px;font-weight:800;color:#1D4ED8;margin-bottom:14px;display:flex;align-items:center;gap:6px">';
+    h += '<span style="background:#1D4ED8;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px">차주</span> 업무 계획</div>';
     if(report.next_week_plan){
-      html += '<div style="margin-bottom:14px;padding:12px 14px;background:#EFF6FF;border-radius:8px;border-left:3px solid #1D4ED8">';
-      html += '<div style="font-size:12px;font-weight:700;color:#1D4ED8;margin-bottom:6px">▶ 차주 계획</div>';
-      html += '<div style="font-size:13px;color:#1e3a5f;line-height:1.65;white-space:pre-wrap">'+esc(report.next_week_plan)+'</div></div>';
+      h += '<div style="font-size:13px;color:#1e3a5f;line-height:1.8;white-space:pre-wrap">'+esc(report.next_week_plan)+'</div>';
+    } else {
+      h += '<div style="color:var(--txt-m);font-size:12px;padding:20px 0;text-align:center">차주 계획이 없습니다</div>';
     }
-
-    // 의사결정 요청
     if(report.decision_request){
-      html += '<div style="padding:12px 14px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
-      html += '<div style="font-size:12px;font-weight:700;color:#C2410C;margin-bottom:6px">⚡ 의사결정 / 상위 요청</div>';
-      html += '<div style="font-size:13px;color:#7c2d12;line-height:1.65;white-space:pre-wrap">'+esc(report.decision_request)+'</div></div>';
+      h += '<div style="margin-top:16px;padding:12px 14px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
+      h += '<div style="font-size:11px;font-weight:800;color:#C2410C;margin-bottom:5px">⚡ 의사결정 / 상위 요청</div>';
+      h += '<div style="font-size:12px;color:#7c2d12;line-height:1.65;white-space:pre-wrap">'+esc(report.decision_request)+'</div></div>';
     }
+    h += '</div></div></div>';
 
-    html += '</div></div>';
-    wrap.innerHTML = html;
+    wrap.innerHTML = h;
   }catch(e){
     console.error('loadWeeklyDetail 오류', e);
     toast('주간보고 조회 중 오류가 발생했습니다','err');
