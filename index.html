@@ -1235,6 +1235,99 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
 @media(max-width:768px){
   .weekly-2col { grid-template-columns: 1fr !important; }
 }
+
+/* ── 모바일 추가 보완 ── */
+@media(max-width:768px){
+
+  /* 업무 등록 모달 - 2컬럼 → 1컬럼 */
+  .m-item [style*="grid-template-columns:1fr 1fr"],
+  .m-item [style*="grid-template-columns: 1fr 1fr"]{
+    grid-template-columns: 1fr !important;
+  }
+  /* 계획 관리 박스 - 날짜 한 줄로 */
+  .m-item [style*="grid-template-columns:1fr auto"]{
+    grid-template-columns: 1fr !important;
+  }
+  /* 모달 내 sel-row 버튼 줄바꿈 */
+  .m-item .sel-row { flex-wrap: wrap; gap: 4px; }
+  .m-item .sel-btn { font-size: 11px; padding: 5px 8px; }
+
+  /* 주간보고 2컬럼 → 1컬럼 */
+  .weekly-2col {
+    grid-template-columns: 1fr !important;
+  }
+  .weekly-2col > div:first-child {
+    border-right: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* 날짜 범위 행 */
+  .date-range-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .date-range-row input[type=date]{
+    width: calc(50% - 14px) !important;
+    min-width: 100px;
+  }
+
+  /* 이슈 체크 한 줄 */
+  #missue-g-1 > div[style*="display:flex"],
+  [id^="missue-g-"] > div[style*="display:flex"]{
+    flex-wrap: wrap;
+    gap: 8px !important;
+  }
+
+  /* 전사회의 조직별 주간보고 2컬럼 */
+  [style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns: 1fr !important;
+  }
+
+  /* rptItemHTML weekly 2컬럼 → 1컬럼 */
+  .rpt-item [style*="display:grid"]{
+    display: block !important;
+  }
+  .rpt-item [style*="display:grid"] > div {
+    margin-bottom: 12px;
+  }
+
+  /* 주간보고 패널 헤더 */
+  #panel-weekly .pg-hdr {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  #panel-weekly .pg-hdr > div:last-child {
+    width: 100%;
+    display: flex;
+    gap: 8px;
+  }
+  #panel-weekly .pg-hdr select {
+    flex: 1;
+  }
+
+  /* 모달 sel-row 버튼 더 작게 */
+  .sel-btn { font-size: 11px !important; padding: 6px 8px !important; }
+
+  /* 모달 내 fgrid override */
+  .modal .fgrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* 계획관리 박스 min-width 제거 */
+  #panel-my [style*="min-width:130px"]{
+    min-width: unset !important;
+    width: 100% !important;
+  }
+
+  /* 이미지 업로드 영역 */
+  .img-upload-area { padding: 16px 12px; }
+  .img-upload-label { font-size: 12px; }
+
+  /* toast 위치 */
+  .toast-wrap { bottom: calc(var(--mob-nav) + 12px); right: 12px; left: 12px; }
+  .toast { max-width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -2273,26 +2366,15 @@ async function enterApp(){
 
   
 
-  // ── 직급별 기본 화면 분기 ──
-  // lv 1: 내 업무일지
-  // lv 2~3: 검토 대기함 (하위 보고 먼저)
-  // lv 4: 부서 집약
-  // lv 5: 전사 회의
-  if(lv >= 5){
-    await loadMy(); // 데이터 백그라운드 로드
-    go('meeting');
-    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='meeting'); });
-  } else if(lv >= 4){
-    await loadMy();
-    go('dept');
-    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='dept'); });
-  } else if(lv >= 2){
-    await loadMy(); // 내 일지도 로드
-    go('review');
-    loadReview();
-    document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='review'); });
-  } else {
-    await loadMy();
+  // ── 모든 직급 공통: 내 업무일지 시작 ──
+  // 로그인의 첫 번째 목적 = 오늘 업무 등록
+  await loadMy();
+  go('my');
+  document.querySelectorAll('.mob-nav-item').forEach(function(i){ i.classList.toggle('on', i.dataset.mtab==='my'); });
+
+  // 하위보고 있는 경우 뱃지 업데이트 (백그라운드)
+  if(lv >= 2){
+    setTimeout(function(){ loadReviewBadge(); }, 2000);
   }
   // 기한 도래 업무 팝업 체크 (로그인 후 1.5초 뒤)
   setTimeout(function(){ checkDueTasks(); }, 1500);
@@ -2508,6 +2590,30 @@ async function checkDueTasks(){
     document.getElementById('dpop-go').onclick = function(){ go('my'); popup.style.display='none'; };
     popup.style.display = 'block';
   }catch(e){ console.error('checkDueTasks error', e); }
+}
+
+
+// 하위보고 뱃지 백그라운드 업데이트
+async function loadReviewBadge(){
+  if(!sb || !CU) return;
+  try{
+    var todayStr = today();
+    var q = sb.from('daily_reports')
+      .select('id', {count:'exact', head:true})
+      .eq('stage','submitted')
+      .neq('author_user_id', CU.user_id);
+    if(CU.position_level < 5){
+      var managed = getManagedOrgCodes(currentOrgCode());
+      if(managed.length) q = q.in('org_code', managed);
+    }
+    var res = await q;
+    var cnt = (res && res.count) ? res.count : 0;
+    var bdg = document.getElementById('bdg-review');
+    if(bdg){
+      bdg.textContent = cnt;
+      bdg.style.display = cnt > 0 ? 'inline-flex' : 'none';
+    }
+  }catch(e){}
 }
 
 async function loadMy(){
@@ -3439,8 +3545,12 @@ async function loadWeeklyDetail(){
 
     // 타이틀바
     h += '<div style="background:linear-gradient(135deg,#1B6B3A 0%,#0f4d2a 100%);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
-    h += '<div><div style="font-size:16px;font-weight:800;color:#fff">📋 '+esc(report.week_label||'주간보고')+'</div>';
-    h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(CU.name||'')+' · '+esc(CU.position_name||'전략기획실장')+'</div></div>';
+    var deptNm = report.org_code ? getDeptName(report.org_code) : getDeptName(CU.org_code||CU.dept_code||'');
+    h += '<div>';
+    h += '<div style="font-size:12px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:.8px;margin-bottom:4px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 10px;border-radius:20px">'+esc(deptNm)+'</div>';
+    h += '<div style="font-size:16px;font-weight:800;color:#fff">'+esc(report.week_label||'주간보고')+'</div>';
+    h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(CU.name||'')+' · '+esc(CU.position_name||'')+'</div>';
+    h += '</div>';
     h += '<div style="display:flex;gap:8px;align-items:center">';
     h += '<span style="font-size:11px;background:rgba(255,255,255,.2);color:#fff;padding:3px 10px;border-radius:20px">'+(report.stage==='submitted'?'제출완료':'임시저장')+'</span>';
     h += '<button class="btn btn-ghost btn-sm" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)" onclick="editWeeklyReport('+report.id+')">수정</button>';
@@ -3696,6 +3806,7 @@ async function saveWeeklyReport(){
     var editId = document.getElementById('weekly-modal-bg').dataset.editId;
     var weekInfo = getWeekInfo(getWeekStartDate(yr, wk).toISOString().split('T')[0]);
 
+    var deptName = getDeptName(CU.org_code || CU.dept_code || '');
     var payload = {
       author_user_id: CU.user_id,
       author_name: CU.name,
@@ -3797,8 +3908,12 @@ function renderMeetingSections(rpts){
       var items = wr._items || [];
       html += '<div class="card" style="margin-bottom:12px">';
       html += '<div class="card-hdr" style="background:#f0f5f3">';
-      html += '<div><div style="font-size:14px;font-weight:800;color:var(--txt-h)">'+esc(wr.author_name||'-')+'</div>';
-      html += '<div style="font-size:11px;color:var(--txt-m)">'+esc(w.week_label||'')+'</div></div>';
+      var wrDept = getDeptName(wr.org_code||'');
+      html += '<div>';
+      html += '<div style="font-size:10px;font-weight:700;color:var(--z-green-d);letter-spacing:.5px;margin-bottom:2px">'+esc(wrDept)+'</div>';
+      html += '<div style="font-size:14px;font-weight:800;color:var(--txt-h)">'+esc(wr.author_name||'-')+'</div>';
+      html += '<div style="font-size:11px;color:var(--txt-m)">'+esc(w.week_label||'')+'</div>';
+      html += '</div>';
       if(wr.decision_required) html += '<span style="font-size:11px;background:#FFF7ED;color:#C2410C;padding:3px 8px;border-radius:6px;font-weight:700">⚡ 의사결정 필요</span>';
       html += '</div>';
       html += '<div style="padding:12px 16px">';
@@ -4247,139 +4362,120 @@ function addItem(prefill){
   itemCount++;
   var idx = itemCount;
   var wrap = document.getElementById('m-items-wrap');
-
   var catOpts = CATS.map(function(c){
     return '<option value="'+c.category_code+'">'+c.icon+' '+c.category_name+'</option>';
   }).join('');
-
-  var defaultCat = prefill ? prefill.category_code : '';
-  var defaultContent = prefill ? (prefill.content_original||'') : '';
-  var defaultPri = prefill ? (prefill.priority_original||1) : 1;
-  var defaultSt = prefill ? (prefill.status||'진행') : '진행';
-  var defaultIssue = prefill ? !!prefill.is_issue : false;
+  var defaultCat      = prefill ? prefill.category_code : '';
+  var defaultContent  = prefill ? (prefill.content_original||'') : '';
+  var defaultTitle    = prefill ? (prefill.report_title||'') : '';
+  var defaultPri      = prefill ? (prefill.priority_original||1) : 1;
+  var defaultSt       = prefill ? (prefill.status||'진행') : '진행';
+  var defaultIssue    = prefill ? !!prefill.is_issue : false;
   var defaultIssueContent = prefill ? (prefill.issue_content||'') : '';
-
-  var priCls = ['','p1-on','p2-on','p3-on'];
-  var stMap = {'완료':'s-done','진행':'s-wip','이월':'s-next'};
-
-  var html = '<div class="m-item" id="mitem-'+idx+'">';
-  html += '<div class="m-item-hdr">';
-  html += '<span class="m-item-num">업무 '+idx+'</span>';
-  if(idx > 1){
-    html += '<button class="m-item-del" onclick="delItem('+idx+')" title="항목 삭제">✕</button>';
-  }
-  html += '</div>';
-
-  // 카테고리
-  html += '<div class="fg2"><label>카테고리 *</label>';
-  html += '<select id="mcat-'+idx+'" onchange="">';
-  html += '<option value="">선택하세요</option>'+catOpts;
-  html += '</select></div>';
-
-  // 제목 (핵심 업무명)
-  var defaultTitle = prefill ? (prefill.report_title||'') : '';
-  html += '<div class="fg2"><label>업무 제목 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">거래처명·프로젝트명 등 핵심 업무명 (1줄)</span></label>';
-  html += '<input id="mtitle-'+idx+'" placeholder="거래처명·프로젝트명 등 핵심 업무명" value="'+esc(defaultTitle)+'" style="width:100%"></div>';
-
-  // 금주 실행 내용
-  html += '<div class="fg2"><label>금주 실행 내용 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">실제로 한 것, 현황, 결과</span></label>';
-  html += '<textarea id="mcontent-'+idx+'" placeholder="이번 주 실제로 진행한 내용, 현재 상태, 결과를 기재하세요"></textarea></div>';
-
-  // 우선순위
-  html += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
-  html += '<button class="sel-btn '+(defaultPri===1?'p1-on':'')+'" id="mpb1-'+idx+'" onclick="setIP('+idx+',1)">★ 일반</button>';
-  html += '<button class="sel-btn '+(defaultPri===2?'p2-on':'')+'" id="mpb2-'+idx+'" onclick="setIP('+idx+',2)">★★ 주요</button>';
-  html += '<button class="sel-btn '+(defaultPri===3?'p3-on':'')+'" id="mpb3-'+idx+'" onclick="setIP('+idx+',3)">★★★ 긴급</button>';
-  html += '</div></div>';
-
-  // 상태
-  html += '<div class="fg2"><label>진행 상태</label><div class="sel-row">';
-  html += '<button class="sel-btn '+(defaultSt==="완료"?"s-done":"")+'" id="msbD-'+idx+'" onclick="setIS('+idx+',0)">✅ 완료</button>';
-  html += '<button class="sel-btn '+(defaultSt==="진행"?"s-wip":"")+'" id="msbW-'+idx+'" onclick="setIS('+idx+',1)">🔄 진행</button>';
-  html += '<button class="sel-btn '+(defaultSt==="이월"?"s-next":"")+'" id="msbN-'+idx+'" onclick="setIS('+idx+',2)">➡️ 이월</button>';
-  html += '</div></div>';
-
-  // 이슈 토글
-  html += '<div class="fg2"><label>이슈 여부</label>';
-  html += '<div class="tog-wrap'+(defaultIssue?' on':'')+'" id="mtog-'+idx+'" onclick="togItemIssue('+idx+')">';
-  html += '<div class="tog-sw'+(defaultIssue?' on':'')+'" id="msw-'+idx+'"></div>';
-  html += '<span class="tog-lbl" id="mtoglbl-'+idx+'">'+(defaultIssue?'⚠ 이슈 있음':'이슈 없음')+'</span>';
-  html += '</div></div>';
-
-  // 이슈 상세 + 지속관리 + 중요도
-  var defaultPersist = prefill ? !!prefill.is_persistent : false;
-  var defaultImportance = prefill ? (prefill.importance_level||1) : 1;
-  html += '<div id="missue-g-'+idx+'" style="display:'+(defaultIssue?'block':'none')+'">';
-  html += '<div class="fg2"><label>이슈 내용 / 필요 조치</label>';
-  html += '<textarea id="missue-'+idx+'" placeholder="이슈 내용, 영향, 필요 조치를 기재하세요"></textarea></div>';
-  // 중요도 (전사회의 포함 여부)
-  html += '<div class="fg2"><label>이슈 중요도</label><div class="sel-row">';
-  html += '<button class="sel-btn '+(defaultImportance===1?'on':'')+'" id="mimp1-'+idx+'" onclick="setItemImportance('+idx+',1)">일반</button>';
-  html += '<button class="sel-btn '+(defaultImportance===2?'p2-on':'')+'" id="mimp2-'+idx+'" onclick="setItemImportance('+idx+',2)">★ 중요</button>';
-  html += '<button class="sel-btn '+(defaultImportance===3?'p3-on':'')+'" id="mimp3-'+idx+'" onclick="setItemImportance('+idx+',3)">🔴 전사회의</button>';
-  html += '</div></div>';
-  // 지속관리 체크
-  html += '<div class="fg2">';
-  html += '<div class="chk-wrap'+(defaultPersist?' on':'')+'" id="mpersist-'+idx+'" onclick="toggleItemCheck('+idx+', \'persist\')"><div class="chk-box">'+(defaultPersist?'✓':'')+'</div>';
-  html += '<span class="chk-lbl" style="font-size:12px">📌 지속 관리 필요 <span style="color:var(--txt-m);font-weight:400">(체크 시 지속이슈로 자동 등록)</span></span></div>';
-  html += '</div>';
-  html += '</div>';
-
-  // 회의용 추가 속성
+  var defaultPersist  = prefill ? !!prefill.is_persistent : false;
+  var defaultNextPlan = prefill ? (prefill.next_plan||'') : '';
+  var defaultDue      = prefill ? (prefill.due_date||'') : '';
   var defaultCustomer = prefill ? !!prefill.customer_related : false;
   var defaultDecision = prefill ? !!prefill.decision_required : false;
-  html += '<div class="fgrid" style="grid-template-columns:1fr 1fr;gap:10px">';
-  html += '<div class="fg2"><label>고객사 영향</label><div class="chk-wrap'+(defaultCustomer?' on':'')+'" id="mcustomer-'+idx+'" onclick="toggleItemCheck('+idx+', \'customer\')"><div class="chk-box">'+(defaultCustomer?'✓':'')+'</div><span class="chk-lbl">고객사 관련 / 대외 영향 있음</span></div></div>';
-  html += '<div class="fg2"><label>의사결정 필요</label><div class="chk-wrap'+(defaultDecision?' on':'')+'" id="mdecision-'+idx+'" onclick="toggleItemCheck('+idx+', \'decision\')"><div class="chk-box">'+(defaultDecision?'✓':'')+'</div><span class="chk-lbl">상위 판단/회의 논의 필요</span></div></div>';
-  html += '</div>';
+  var defaultImportance = prefill ? (prefill.importance_level||1) : 1;
 
-  // 이미지 첨부
-  html += '<div class="fg2" style="margin-top:8px">';
-  html += '<label>이미지 첨부 <span style="font-weight:400;color:var(--txt-m)">(선택 · 여러 장 가능)</span></label>';
-  html += '<div class="img-upload-area" id="imgarea-'+idx+'">';
-  html += '<input type="file" id="imgfile-'+idx+'" accept="image/*" multiple onchange="handleImgSelect('+idx+', this)">';
-  html += '<div class="img-upload-label">📎 클릭하거나 이미지를 끌어다 놓으세요<br><span>캡처, 엑셀 표 등 이미지 파일</span></div>';
-  html += '</div>';
-  html += '<div class="img-preview-wrap" id="imgpreview-'+idx+'"></div>';
-  html += '</div>';
+  var h = '<div class="m-item" id="mitem-'+idx+'">';
+  h += '<div class="m-item-hdr">';
+  h += '<span class="m-item-num">업무 '+idx+'</span>';
+  if(idx > 1) h += '<button class="m-item-del" onclick="delItem('+idx+')" title="삭제">✕</button>';
+  h += '</div>';
 
-  html += '</div>'; // m-item 끝
+  // ① 필수
+  h += '<div class="fg2"><label>카테고리 *</label>';
+  h += '<select id="mcat-'+idx+'"><option value="">선택하세요</option>'+catOpts+'</select></div>';
+  h += '<div class="fg2"><label>업무 제목 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">핵심 업무명 (1줄)</span></label>';
+  h += '<input id="mtitle-'+idx+'" placeholder="거래처명·프로젝트명 등 핵심 업무명" value="'+esc(defaultTitle)+'" style="width:100%"></div>';
+  h += '<div class="fg2"><label>금주 실행 내용 * <span style="font-weight:400;color:var(--txt-m);font-size:11px">한 것·현황·결과</span></label>';
+  h += '<textarea id="mcontent-'+idx+'" placeholder="이번 주 실제로 진행한 내용, 현재 상태, 결과">'+esc(defaultContent)+'</textarea></div>';
+  // 상태+우선순위
+  h += '<div class="fgrid" style="grid-template-columns:1fr 1fr;gap:10px">';
+  h += '<div class="fg2"><label>진행 상태</label><div class="sel-row">';
+  h += '<button class="sel-btn '+(defaultSt==='완료'?'s-done':'')+'" id="msbD-'+idx+'" onclick="setIS('+idx+',0)">✅ 완료</button>';
+  h += '<button class="sel-btn '+(defaultSt==='진행'?'s-wip':'')+'" id="msbW-'+idx+'" onclick="setIS('+idx+',1)">🔄 진행</button>';
+  h += '<button class="sel-btn '+(defaultSt==='이월'?'s-next':'')+'" id="msbN-'+idx+'" onclick="setIS('+idx+',2)">➡ 이월</button>';
+  h += '</div></div>';
+  h += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
+  h += '<button class="sel-btn '+(defaultPri===1?'p1-on':'')+'" id="mpb1-'+idx+'" onclick="setIP('+idx+',1)">★</button>';
+  h += '<button class="sel-btn '+(defaultPri===2?'p2-on':'')+'" id="mpb2-'+idx+'" onclick="setIP('+idx+',2)">★★</button>';
+  h += '<button class="sel-btn '+(defaultPri===3?'p3-on':'')+'" id="mpb3-'+idx+'" onclick="setIP('+idx+',3)">★★★</button>';
+  h += '</div></div></div>';
 
-  wrap.insertAdjacentHTML('beforeend', html);
+  // ② 계획
+  h += '<div style="background:#EFF6FF;border-radius:10px;padding:12px 14px;margin-bottom:10px">';
+  h += '<div style="font-size:11px;font-weight:800;color:#1D4ED8;margin-bottom:10px">📅 계획 관리</div>';
+  h += '<div class="fgrid" style="grid-template-columns:1fr auto;gap:10px;align-items:end">';
+  h += '<div class="fg2" style="margin-bottom:0"><label style="color:#1D4ED8">다음 할 일 <span style="font-weight:400;color:#60a5fa;font-size:11px">이 업무 다음 액션</span></label>';
+  h += '<input id="mnext-'+idx+'" placeholder="다음에 할 것, 필요 조치" value="'+esc(defaultNextPlan)+'" style="width:100%"></div>';
+  h += '<div class="fg2" style="margin-bottom:0;min-width:130px"><label style="color:#1D4ED8">목표 기한</label>';
+  h += '<input type="date" id="mdue-'+idx+'" value="'+esc(defaultDue)+'"></div>';
+  h += '</div></div>';
 
-  // prefill 값 설정
+  // ③ 이슈
+  var issueBg = defaultIssue ? '#FEF2F2' : '#fafafa';
+  var issueBd = defaultIssue ? '#fca5a5' : 'var(--border)';
+  h += '<div style="background:'+issueBg+';border-radius:10px;padding:12px 14px;margin-bottom:10px;border:1px solid '+issueBd+'" id="issue-wrap-'+idx+'">';
+  h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:'+(defaultIssue?'10':'0')+'px">';
+  h += '<span style="font-size:11px;font-weight:800;color:'+(defaultIssue?'#DC2626':'var(--txt-m)')+'">⚠ 이슈</span>';
+  h += '<div class="tog-wrap'+(defaultIssue?' on':'')+'" id="mtog-'+idx+'" onclick="togItemIssue('+idx+')" style="margin-bottom:0">';
+  h += '<div class="tog-sw'+(defaultIssue?' on':'')+'" id="msw-'+idx+'"></div>';
+  h += '<span class="tog-lbl" id="mtoglbl-'+idx+'" style="font-size:11px">'+(defaultIssue?'이슈 있음':'없음')+'</span>';
+  h += '</div></div>';
+  h += '<div id="missue-g-'+idx+'" style="display:'+(defaultIssue?'block':'none')+'">';
+  h += '<div class="fg2" style="margin-bottom:8px"><label>이슈 내용 / 필요 조치</label>';
+  h += '<textarea id="missue-'+idx+'" placeholder="이슈 내용, 영향, 필요 조치를 기재하세요" style="min-height:60px">'+esc(defaultIssueContent)+'</textarea></div>';
+  h += '<div style="display:flex;gap:12px;flex-wrap:wrap">';
+  h += '<div class="chk-wrap'+(defaultPersist?' on':'')+'" id="mpersist-'+idx+'" onclick="toggleItemCheck('+idx+", 'persist'"+')"><div class="chk-box">'+(defaultPersist?'✓':'')+'</div>';
+  h += '<span class="chk-lbl" style="font-size:12px">📌 지속 관리 필요</span></div>';
+  h += '<div class="chk-wrap'+(defaultDecision?' on':'')+'" id="mdecision-'+idx+'" onclick="toggleItemCheck('+idx+", 'decision'"+')"><div class="chk-box">'+(defaultDecision?'✓':'')+'</div>';
+  h += '<span class="chk-lbl" style="font-size:12px">⚡ 의사결정 필요</span></div>';
+  h += '</div></div></div>';
+
+  // ④ 추가 정보 (접힘)
+  h += '<div id="mmore-wrap-'+idx+'" style="display:none">';
+  h += '<div class="fg2"><label>고객사 영향</label>';
+  h += '<div class="chk-wrap'+(defaultCustomer?' on':'')+'" id="mcustomer-'+idx+'" onclick="toggleItemCheck('+idx+", 'customer'"+')"><div class="chk-box">'+(defaultCustomer?'✓':'')+'</div>';
+  h += '<span class="chk-lbl">고객사 관련 / 대외 영향 있음</span></div></div>';
+  h += '<div class="fg2"><label>이슈 중요도 <span style="font-weight:400;color:var(--txt-m);font-size:11px">이슈 있을 때만</span></label><div class="sel-row">';
+  h += '<button class="sel-btn '+(defaultImportance===1?'on':'')+'" id="mimp1-'+idx+'" onclick="setItemImportance('+idx+',1)">일반</button>';
+  h += '<button class="sel-btn '+(defaultImportance===2?'p2-on':'')+'" id="mimp2-'+idx+'" onclick="setItemImportance('+idx+',2)">★ 중요</button>';
+  h += '<button class="sel-btn '+(defaultImportance===3?'p3-on':'')+'" id="mimp3-'+idx+'" onclick="setItemImportance('+idx+',3)">🔴 전사회의</button>';
+  h += '</div></div>';
+  h += '<div class="fg2" style="margin-top:8px"><label>이미지 첨부 <span style="font-weight:400;color:var(--txt-m)">(선택)</span></label>';
+  h += '<div class="img-upload-area" id="imgarea-'+idx+'">';
+  h += '<input type="file" id="imgfile-'+idx+'" accept="image/*" multiple onchange="handleImgSelect('+idx+', this)">';
+  h += '<div class="img-upload-label">📎 클릭하거나 이미지를 끌어다 놓으세요</div>';
+  h += '</div><div class="img-preview-wrap" id="imgpreview-'+idx+'"></div></div>';
+  h += '</div>';
+  h += '<button style="width:100%;padding:6px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--txt-m);font-size:11px;cursor:pointer;margin-top:4px" onclick="toggleMoreItem('+idx+')" id="mmore-btn-'+idx+'">+ 추가 정보 (고객영향 · 이슈 중요도 · 이미지)</button>';
+
+  h += '</div>'; // m-item 끝
+
+  wrap.insertAdjacentHTML('beforeend', h);
+
   if(prefill){
     var catEl = document.getElementById('mcat-'+idx);
     if(catEl) catEl.value = defaultCat;
-    var contEl = document.getElementById('mcontent-'+idx);
-    if(contEl) contEl.value = defaultContent;
     if(defaultIssue){
       var issEl = document.getElementById('missue-'+idx);
       if(issEl) issEl.value = defaultIssueContent;
     }
   }
+  if(!prefill){ setIP(idx,1); setIS(idx,1); }
 
-  // 기본 상태 선택 (prefill 없을 때)
-  if(!prefill){
-    setIP(idx, 1);
-    setIS(idx, 1);
-  }
-
-  // 드래그앤드롭 이벤트 등록
   var area = document.getElementById('imgarea-'+idx);
   if(area){
-    area.ondragover = function(e){ e.preventDefault(); area.classList.add('drag-over'); };
+    area.ondragover  = function(e){ e.preventDefault(); area.classList.add('drag-over'); };
     area.ondragleave = function(){ area.classList.remove('drag-over'); };
-    area.ondrop = function(e){
-      e.preventDefault();
-      area.classList.remove('drag-over');
-      if(e.dataTransfer && e.dataTransfer.files) handleImgSelect(idx, {files: e.dataTransfer.files});
-    };
+    area.ondrop      = function(e){ e.preventDefault(); area.classList.remove('drag-over'); if(e.dataTransfer&&e.dataTransfer.files) handleImgSelect(idx,{files:e.dataTransfer.files}); };
   }
-
-  // 번호 업데이트
   updateItemNumbers();
 }
+
 
 function delItem(idx){
   var el = document.getElementById('mitem-'+idx);
@@ -4415,6 +4511,7 @@ function setIS(idx, v){
 }
 
 function togItemIssue(idx){
+  var wrap_bg = document.getElementById('issue-wrap-'+idx);
   var tog = document.getElementById('mtog-'+idx);
   var sw = document.getElementById('msw-'+idx);
   var lbl = document.getElementById('mtoglbl-'+idx);
