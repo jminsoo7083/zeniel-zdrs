@@ -2905,30 +2905,62 @@ function renderGrouped(el, rpts, label){
 }
 
 function rptItemHTML(r){
+  // 주간보고 타입 별도 렌더링
+  if(r._type === 'weekly'){
+    var wr = r._weekly||{};
+    var wItems = r._items||[];
+    var html = '<div class="rpt-item" style="background:#f8faf9;border-left:4px solid #1B6B3A;padding:14px 16px">';
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">';
+    // 금주
+    html += '<div>';
+    html += '<div style="font-size:11px;font-weight:800;color:#1B6B3A;margin-bottom:8px">금주 실적</div>';
+    if(wItems.length){
+      wItems.forEach(function(it){
+        var dr = it.daily_reports;
+        if(!dr) return;
+        html += '<div style="font-size:12px;margin-bottom:4px;padding-left:8px;border-left:2px solid #cce8d8">';
+        html += '<span style="font-weight:700;color:#0f1f17">'+(dr.report_title||catName(dr.category_code))+'</span>';
+        html += ' <span style="font-size:10px;color:#888">'+esc(dr.status||'')+'</span>';
+        html += '</div>';
+      });
+    } else if(wr.summary){
+      html += '<div style="font-size:12px;color:#374151;white-space:pre-wrap">'+esc(wr.summary)+'</div>';
+    } else {
+      html += '<div style="font-size:11px;color:#aaa">일일보고 연결 없음</div>';
+    }
+    html += '</div>';
+    // 차주
+    html += '<div>';
+    html += '<div style="font-size:11px;font-weight:800;color:#1D4ED8;margin-bottom:8px">차주 계획</div>';
+    html += '<div style="font-size:12px;color:#1e3a5f;white-space:pre-wrap">'+esc(wr.next_week_plan||'-')+'</div>';
+    if(wr.decision_request){
+      html += '<div style="margin-top:8px;font-size:11px;color:#C2410C;background:#FFF7ED;padding:6px 8px;border-radius:5px">⚡ '+esc(wr.decision_request)+'</div>';
+    }
+    html += '</div></div>';
+    html += '<div style="display:flex;justify-content:flex-end;margin-top:6px">';
+    html += '<span style="font-size:11px;color:#888">'+esc(r.author_name||'-')+'</span>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
   var displayContent = r.content_exec || r.content_dept || r.content_team || r.content_original;
   var isEdited = r.content_exec || r.content_dept || r.content_team;
-  return `
-    <div class="rpt-item ${r.is_urgent?'urgent-item':''}">
-      <div class="rpt-pri">
-        <span class="${pc(r.priority_original)} stars" style="font-size:14px">${'★'.repeat(r.priority_original||1)}</span>
-      </div>
-      <div class="rpt-body">
-        <div class="rpt-content">${esc(displayContent)}</div>
-        ${r.is_issue?`<div class="rpt-issue">⚠ ${esc(r.issue_content||'')}</div>`:''}
-        <div class="rpt-layers">
-          ${isEdited?`<span class="layer-chip layer-team">✏ 요약편집됨</span>`:'<span class="layer-chip layer-orig">원문</span>'}
-          <span class="bdg ${stBdg(r.status)}">${r.status}</span>
-          ${r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':''}
-          ${r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':''}
-          ${r.is_urgent?'<span class="bdg bdg-urgent">🚨 긴급직상향</span>':''}
-        </div>
-      </div>
-      <div class="rpt-meta">
-        <div class="rpt-author">${r.author_name||'-'}</div>
-        <div class="rpt-date">${r.report_date}</div>
-      </div>
-    </div>
-  `;
+  return '<div class="rpt-item '+(r.is_urgent?'urgent-item':'')+'">'
+    +'<div class="rpt-pri"><span class="'+pc(r.priority_original)+' stars" style="font-size:14px">'+'★'.repeat(r.priority_original||1)+'</span></div>'
+    +'<div class="rpt-body">'
+    +'<div class="rpt-content">'+esc(displayContent||'')+'</div>'
+    +(r.is_issue?'<div class="rpt-issue">⚠ '+esc(r.issue_content||'')+'</div>':'')
+    +'<div class="rpt-layers">'
+    +(isEdited?'<span class="layer-chip layer-team">✏ 요약편집됨</span>':'<span class="layer-chip layer-orig">원문</span>')
+    +'<span class="bdg '+stBdg(r.status||'')+'">'+esc(r.status||'-')+'</span>'
+    +(r.customer_related?'<span class="bdg" style="background:#EFF6FF;color:#1D4ED8">고객영향</span>':'')
+    +(r.decision_required?'<span class="bdg" style="background:#FFF7ED;color:#C2410C">판단필요</span>':'')
+    +(r.is_urgent?'<span class="bdg bdg-urgent">🚨 긴급직상향</span>':'')
+    +'</div></div>'
+    +'<div class="rpt-meta"><div class="rpt-author">'+esc(r.author_name||'-')+'</div>'
+    +'<div class="rpt-date">'+esc(r.report_date||'')+'</div></div>'
+    +'</div>';
 }
 
 
@@ -3444,10 +3476,16 @@ async function loadWeeklyDetail(){
         });
         h += '</div>';
       });
-    } else if(report.summary){
-      h += '<div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap">'+esc(report.summary)+'</div>';
     } else {
-      h += '<div style="color:var(--txt-m);font-size:12px;padding:20px 0;text-align:center">등록된 업무 항목이 없습니다</div>';
+      // 연결된 일일보고 없을 때 - summary 또는 안내 표시
+      if(report.summary){
+        h += '<div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap">'+esc(report.summary)+'</div>';
+      } else {
+        h += '<div style="color:var(--txt-m);font-size:12px;padding:16px 0;text-align:center;line-height:1.7">';
+        h += '일일보고 연결 항목이 없습니다<br>';
+        h += '<span style="font-size:11px">주간보고 수정에서 이슈를 선택하거나<br>이번 주 이슈를 일일보고에 등록해주세요</span>';
+        h += '</div>';
+      }
     }
     h += '</div>';
 
@@ -3983,17 +4021,25 @@ async function loadMeeting(){
       _type: 'weekly',
       _weekly: wr,
       id: 'w'+wr.id,
-      author_name: wr.author_name,
+      author_name: wr.author_name||'-',
+      author_user_id: wr.author_user_id,
       company_code: wr.company_code,
       org_code: wr.org_code,
+      report_date: wr.updated_at ? wr.updated_at.substring(0,10) : '',
       report_title: wr.week_label||'주간보고',
-      content_original: wr.summary||'',
+      content_original: wr.summary||wr.next_week_plan||'(주간보고 - 차주계획 참조)',
       next_plan: wr.next_week_plan||'',
       decision_required: !!(wr.decision_request),
       decision_content: wr.decision_request||'',
       category_code: 'WEEKLY',
       is_issue: !!(wr.decision_request),
+      issue_content: wr.decision_request||'',
       importance_level: 3,
+      status: 'submitted',
+      priority_original: 2,
+      stage: 'submitted',
+      is_urgent: false,
+      customer_related: false,
       _items: wr.weekly_report_items||[]
     });
   });
