@@ -3543,6 +3543,13 @@ async function saveIssueMaster(){
 // ══════════════════════════════════════════════
 
 // 주차 셀렉트 옵션 채우기 (최근 12주)
+var KO_DAYS = ['일','월','화','수','목','금','토'];
+function weekDateLabel(yr, wk){
+  var startDate = getWeekStartDate(yr, wk);
+  var endDate = new Date(startDate); endDate.setDate(startDate.getDate()+6);
+  return yr+'년 '+(startDate.getMonth()+1)+'월 '+startDate.getDate()+'일('+KO_DAYS[startDate.getDay()]+') ~ '
+       + (endDate.getMonth()+1)+'월 '+endDate.getDate()+'일('+KO_DAYS[endDate.getDay()]+')';
+}
 function buildWeekOptions(selId){
   var sel = document.getElementById(selId);
   if(!sel) return;
@@ -3553,11 +3560,7 @@ function buildWeekOptions(selId){
     d.setDate(d.getDate() - i*7);
     var w = getWeek(d);
     var y = d.getFullYear();
-    var day = d.getDay();
-    var diff = d.getDate() - (day===0?6:day-1);
-    var mon = new Date(d); mon.setDate(diff);
-    var sun = new Date(mon); sun.setDate(mon.getDate()+6);
-    var label = y+'년 '+w+'주 ('+(mon.getMonth()+1)+'/'+mon.getDate()+'~'+(sun.getMonth()+1)+'/'+sun.getDate()+')';
+    var label = weekDateLabel(y, w);
     var opt = document.createElement('option');
     opt.value = y+'-'+w;
     opt.textContent = label;
@@ -3651,7 +3654,7 @@ async function loadWeeklyDetail(){
         var deptNm = getDeptName(report.org_code||'');
         h += '<div>';
         h += '<div style="font-size:12px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:.8px;margin-bottom:4px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 10px;border-radius:20px">'+esc(deptNm)+'</div>';
-        h += '<div style="font-size:16px;font-weight:800;color:#fff">'+esc(report.week_label||'주간보고')+'</div>';
+        h += '<div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.2px">'+esc(report.week_label||'주간보고')+'</div>';
         h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(report.author_name||'')+' · '+esc(report.author_position||'')+'</div>';
     h += '</div>';
     h += '<div style="display:flex;gap:8px;align-items:center">';
@@ -3680,10 +3683,20 @@ async function loadWeeklyDetail(){
           var stB = dr.status==='완료'?'#D1FAE5':dr.status==='이월'?'#FEF3C7':'#EFF6FF';
           h += '<div style="padding:9px 12px;background:#f8faf9;border-radius:8px;margin-bottom:6px;border-left:3px solid #1B6B3A">';
           h += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px">';
-          h += '<div style="font-size:12px;font-weight:700;color:#0f1f17;flex:1">'+(dr.report_title?esc(dr.report_title):catName(dr.category_code))+'</div>';
-          h += '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+stB+';color:'+stC+';flex-shrink:0">'+esc(dr.status||'진행')+'</span>';
+          h += '<div style="font-size:13px;font-weight:800;color:#0f1f17;flex:1;letter-spacing:-.2px">'+(dr.report_title?esc(dr.report_title):catName(dr.category_code))+'</div>';
+          var prog = dr.progress_rate;
+          var progTxt = (prog!==undefined&&prog!==null) ? prog+'%' : '';
+          h += '<div style="display:flex;align-items:center;gap:4px;flex-shrink:0">';
+          if(progTxt) h += '<span style="font-size:10px;font-weight:800;color:'+stC+';background:'+stB+';padding:1px 6px;border-radius:10px">'+progTxt+'</span>';
+          h += '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+stB+';color:'+stC+'">'+esc(dr.status||'진행')+'</span>';
+          h += '</div>';
           h += '</div>';
           h += '<div style="font-size:11px;color:#374151;line-height:1.6">'+esc(content)+'</div>';
+          if(prog!==undefined&&prog!==null&&prog>0){
+            h += '<div style="margin-top:5px;background:#e5e7eb;border-radius:4px;height:4px;overflow:hidden">';
+            h += '<div style="width:'+prog+'%;background:'+(prog>=100?'#065f46':prog>=70?'#1B6B3A':'#60a5fa')+';height:100%;border-radius:4px;transition:width .3s"></div>';
+            h += '</div>';
+          }
           if(dr.is_issue&&dr.issue_content) h += '<div style="font-size:10px;color:#dc2626;background:#fef2f2;padding:3px 7px;border-radius:4px;margin-top:4px">⚠ '+esc(dr.issue_content)+'</div>';
           h += '</div>';
         });
@@ -3921,7 +3934,7 @@ async function saveWeeklyReport(){
       org_code: CU.org_code,
       year_num: yr,
       week_number: wk,
-      week_label: yr+'년 '+wk+'주',
+      week_label: weekDateLabel(yr, wk),
       summary: summary || null,
       next_week_plan: nextPlan,
       decision_request: decision || null,
@@ -4501,11 +4514,19 @@ function addItem(prefill){
   h += '<textarea id="mcontent-'+idx+'" placeholder="이번 주 실제로 진행한 내용, 현재 상태, 결과">'+esc(defaultContent)+'</textarea></div>';
   // 상태+우선순위
   h += '<div class="fgrid" style="grid-template-columns:1fr 1fr;gap:10px">';
-  h += '<div class="fg2"><label>진행 상태</label><div class="sel-row">';
+  var defaultProgress = prefill ? (prefill.progress_rate||0) : 0;
+  h += '<div class="fgrid" style="grid-template-columns:1fr 130px;gap:10px">';
+  h += '<div class="fg2" style="margin-bottom:0"><label>진행 상태</label><div class="sel-row">';
   h += '<button class="sel-btn '+(defaultSt==='완료'?'s-done':'')+'" id="msbD-'+idx+'" onclick="setIS('+idx+',0)">✅ 완료</button>';
   h += '<button class="sel-btn '+(defaultSt==='진행'?'s-wip':'')+'" id="msbW-'+idx+'" onclick="setIS('+idx+',1)">🔄 진행</button>';
   h += '<button class="sel-btn '+(defaultSt==='이월'?'s-next':'')+'" id="msbN-'+idx+'" onclick="setIS('+idx+',2)">➡ 이월</button>';
   h += '</div></div>';
+  h += '<div class="fg2" style="margin-bottom:0"><label>진척도 <span style="font-weight:400;color:var(--txt-m);font-size:11px">0~100%</span></label>';
+  h += '<div style="display:flex;align-items:center;gap:6px">';
+  h += '<input type="number" id="mprogress-'+idx+'" min="0" max="100" value="'+defaultProgress+'" style="width:70px;text-align:center">';
+  h += '<span style="font-size:13px;color:var(--txt-m)">%</span>';
+  h += '</div></div>';
+  h += '</div>';
   h += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
   h += '<button class="sel-btn '+(defaultPri===1?'p1-on':'')+'" id="mpb1-'+idx+'" onclick="setIP('+idx+',1)">★</button>';
   h += '<button class="sel-btn '+(defaultPri===2?'p2-on':'')+'" id="mpb2-'+idx+'" onclick="setIP('+idx+',2)">★★</button>';
@@ -4754,6 +4775,7 @@ async function saveReport(keepOpen){
       due_date: dueEl && dueEl.value ? dueEl.value : null,
       priority_original: getItemPriority(idx),
       status: getItemStatus(idx),
+      progress_rate: (function(){ var el=document.getElementById('mprogress-'+idx); return el?parseInt(el.value||0):0; })(),
       is_issue: isIssue,
       issue_content: isIssue ? issueContent : null,
       is_persistent: isIssue && getItemChecked(idx, 'persist'),
