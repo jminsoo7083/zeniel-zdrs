@@ -1590,10 +1590,20 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
           <div class="pg-title">이슈 현황</div>
           <div class="pg-sub">등록된 이슈 현황을 조회합니다</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="date-quick-wrap">
+            <button class="date-quick-btn" onclick="setDateRange('iss','today')">오늘</button>
+            <button class="date-quick-btn" onclick="setDateRange('iss','week')">이번주</button>
+            <button class="date-quick-btn" onclick="setDateRange('iss','month')">이번달</button>
+          </div>
+          <div class="date-range-row" style="margin-top:0">
+            <input type="date" id="f-iss-date-from" onchange="loadIssues()">
+            <span style="color:var(--txt-m);font-size:12px">~</span>
+            <input type="date" id="f-iss-date-to" onchange="loadIssues()">
+          </div>
           <select id="f-iss-co" class="fbar-input"><option value="">계열사 전체</option></select>
           <select id="f-iss-cat" class="fbar-input"><option value="">카테고리 전체</option></select>
-          <button class="btn btn-ghost" onclick="loadIssues()">조회</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadIssues()">조회</button>
         </div>
       </div>
       <div id="issues-body">
@@ -1639,14 +1649,19 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select id="f-im-co" class="fbar-input"><option value="">계열사 전체</option></select>
-          <select id="f-im-status" class="fbar-input">
+          <div class="date-quick-wrap">
+            <button class="date-quick-btn" onclick="setDateRange('im','week')">이번주</button>
+            <button class="date-quick-btn" onclick="setDateRange('im','month')">이번달</button>
+            <button class="date-quick-btn on" onclick="setDateRange('im','all')">전체</button>
+          </div>
+          <select id="f-im-status" class="fbar-input" onchange="loadIssueMaster()">
             <option value="">상태 전체</option>
-            <option value="open">진행중</option>
+            <option value="open" selected>진행중</option>
             <option value="monitoring">모니터링</option>
             <option value="resolved">해결</option>
             <option value="closed">종결</option>
           </select>
-          <button class="btn btn-ghost" onclick="loadIssueMaster()">조회</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadIssueMaster()">조회</button>
           <button class="btn btn-primary" onclick="openIssueMasterModal()">＋ 지속 이슈 등록</button>
         </div>
       </div>
@@ -2207,6 +2222,22 @@ function setDateRange(panel, mode){
   var t = today();
   var fromVal = t, toVal = t;
 
+  if(mode === 'all'){
+    // 전체 기간 - 날짜 초기화
+    var fromEl2 = document.getElementById('f-'+panel+'-date-from');
+    var toEl2   = document.getElementById('f-'+panel+'-date-to');
+    if(fromEl2) fromEl2.value = '';
+    if(toEl2)   toEl2.value   = '';
+    // 버튼 상태
+    var allBtns2 = ['today','week','month','custom','all'];
+    allBtns2.forEach(function(b){
+      var el=document.getElementById(panel+'-q-'+b)||document.getElementById('my-q-'+b);
+      if(el) el.classList.toggle('on', b==='all');
+    });
+    if(panel==='iss') loadIssues();
+    else if(panel==='im') loadIssueMaster();
+    return;
+  }
   if(mode === 'week'){
     var d = new Date();
     var day = d.getDay() || 7;
@@ -2240,9 +2271,11 @@ function setDateRange(panel, mode){
   if(toEl)   toEl.value   = toVal;
 
   // 조회 실행
-  if(panel==='my') loadMy();
-  else if(panel==='rv') loadReview();
-  else if(panel==='dp') loadDept();
+  if(panel==='my')  loadMy();
+  else if(panel==='rv')  loadReview();
+  else if(panel==='dp')  loadDept();
+  else if(panel==='iss') loadIssues();
+  else if(panel==='im')  loadIssueMaster();
 }
 
 // ══════════════════════════════════════════════
@@ -2907,17 +2940,25 @@ async function loadReview(){
 // 이슈 현황
 // ══════════════════════════════════════════════
 async function loadIssues(){
-  var co=document.getElementById('f-iss-co').value;
-  var cat=document.getElementById('f-iss-cat').value;
+  if(!CU) return;
+  var co  = document.getElementById('f-iss-co').value;
+  var cat = document.getElementById('f-iss-cat').value;
+  var fromEl = document.getElementById('f-iss-date-from');
+  var toEl   = document.getElementById('f-iss-date-to');
+  var dateFrom = fromEl ? fromEl.value : '';
+  var dateTo   = toEl   ? toEl.value   : '';
   var rpts=[];
-  if(!sb){ rpts=DEMO_REPORTS().filter(r=>r.is_issue); }
+  if(!sb){ rpts=DEMO_REPORTS().filter(function(r){ return r.is_issue; }); }
   else{
     try{
       var q=sb.from('daily_reports').select('*').eq('is_issue',true);
-      if(co)q=q.eq('company_code',co);if(cat)q=q.eq('category_code',cat);
-      const{data}=await q.order('priority_original',{ascending:false}).order('report_date',{ascending:false});
-      if(data)rpts=data;
-    }catch(e){}
+      if(dateFrom) q=q.gte('report_date',dateFrom);
+      if(dateTo)   q=q.lte('report_date',dateTo);
+      if(co)  q=q.eq('company_code',co);
+      if(cat) q=q.eq('category_code',cat);
+      var issRes = await q.order('priority_original',{ascending:false}).order('report_date',{ascending:false});
+      if(issRes&&issRes.data) rpts=issRes.data;
+    }catch(e){ console.error('loadIssues 오류',e); }
   }
   var el=document.getElementById('issues-body');
   if(!rpts.length){el.innerHTML=`<div class="empty"><div class="empty-ico">✅</div><div class="empty-msg">등록된 이슈가 없습니다</div></div>`;return;}
@@ -3132,6 +3173,24 @@ function togglePresentationMode(){
 // ══════════════════════════════════════════════
 // 지속 이슈
 // ══════════════════════════════════════════════
+
+async function changeIssueStatus(id, status){
+  if(!sb){ toast('상태 변경됨 (데모)','ok'); return; }
+  try{
+    var res = await sb.from('issue_master').update({
+      issue_status: status,
+      updated_at: new Date().toISOString()
+    }).eq('id', id);
+    if(res.error) throw res.error;
+    var label = status==='resolved' ? '해결 처리됐습니다' : '종결 처리됐습니다';
+    toast(label, 'ok');
+    await loadIssueMaster();
+  }catch(e){
+    console.error('changeIssueStatus 오류', e);
+    toast('상태 변경 중 오류가 발생했습니다','err');
+  }
+}
+
 async function loadIssueMaster(){
   var co=document.getElementById('f-im-co').value;
   var st=document.getElementById('f-im-status').value;
@@ -3177,9 +3236,19 @@ async function loadIssueMaster(){
         ${i.impact_summary?`<div style="font-size:12px;color:var(--danger);background:#FEF2F2;padding:8px 12px;border-radius:6px;margin-bottom:6px">영향/리스크 · ${esc(i.impact_summary)}</div>`:''}
         ${i.action_plan?`<div style="font-size:12px;color:var(--z-green-d);background:var(--z-green-s);padding:8px 12px;border-radius:6px">차주 계획 · ${esc(i.action_plan)}</div>`:''}
       </div>
-      <div style="text-align:right;flex-shrink:0;min-width:92px">
+      <div style="text-align:right;flex-shrink:0;min-width:110px">
         <div style="font-size:11px;font-weight:600;color:var(--txt-s)">${i.owner_name||'-'}</div>
         <div style="font-size:10px;color:var(--txt-m);font-family:monospace;margin-top:2px">${i.start_date||''}</div>
+        <div style="display:flex;flex-direction:column;gap:4px;margin-top:8px">
+          ${i.issue_status==='open'||i.issue_status==='monitoring' ? `
+            <button onclick="changeIssueStatus(${i.id},'resolved')" class="btn btn-ghost btn-xs" style="color:#065f46;border-color:#D1FAE5;font-size:10px">✓ 해결</button>
+            <button onclick="changeIssueStatus(${i.id},'closed')" class="btn btn-ghost btn-xs" style="color:#6b7280;font-size:10px">종결</button>
+            <button onclick="openIssueMasterModal(${i.id})" class="btn btn-ghost btn-xs" style="font-size:10px">수정</button>
+          ` : `
+            <span style="font-size:11px;font-weight:700;color:${i.issue_status==='resolved'?'#065f46':'#6b7280'}">${i.issue_status==='resolved'?'✓ 해결됨':'종결됨'}</span>
+            <button onclick="changeIssueStatus(${i.id},'open')" class="btn btn-ghost btn-xs" style="font-size:10px;margin-top:4px">재개</button>
+          `}
+        </div>
       </div>
     </div>
   `).join('');
@@ -3516,40 +3585,74 @@ async function loadWeeklyDetail(){
   if(!wrap) return;
   if(!sb){ wrap.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
   try{
-    var res = await sb.from('weekly_reports')
-      .select('*').eq('author_user_id', CU.user_id)
-      .eq('year_num', yr).eq('week_number', wk)
-      .order('created_at',{ascending:false}).limit(1);
-    var report = (res&&res.data&&res.data.length)?res.data[0]:null;
-    if(!report){ wrap.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
+    // 권한별 조회: lv2 이상이면 하위조직 전체, lv1이면 본인만
+    var lv = CU.position_level || 1;
+    var wrQ = sb.from('weekly_reports')
+      .select('*, weekly_report_items(*, daily_reports(*))')
+      .eq('year_num', yr)
+      .eq('week_number', wk)
+      .order('org_code');
+
+    if(lv >= 5){
+      // 전략기획실장: 전사 전체 (본인 포함)
+    } else if(lv >= 2){
+      // 팀장 이상: 같은 계열사 + 본인 조직 하위
+      var managed = getManagedOrgCodes(currentOrgCode());
+      managed.push(currentOrgCode());
+      wrQ = wrQ.in('org_code', managed);
+    } else {
+      // 팀원: 본인 부서 전체
+      wrQ = wrQ.eq('org_code', CU.org_code||currentOrgCode());
+    }
+
+    var res = await wrQ;
+    var reports = (res&&res.data) ? res.data : [];
+
+    if(!reports.length){ wrap.innerHTML=''; if(emptyEl) emptyEl.style.display='block'; return; }
     if(emptyEl) emptyEl.style.display='none';
 
-    var itemRes = await sb.from('weekly_report_items')
-      .select('*,daily_reports(*)')
-      .eq('weekly_report_id', report.id);
-    var items = (itemRes&&itemRes.data)?itemRes.data:[];
-
-    // 카테고리별 금주 업무 그룹핑
-    var catGroups = {};
-    var catOrder = [];
-    items.forEach(function(item){
-      var dr = item.daily_reports;
-      if(!dr) return;
-      var cat = dr.category_code||'ADMIN';
-      if(!catGroups[cat]){ catGroups[cat]=[]; catOrder.push(cat); }
-      catGroups[cat].push({dr:dr, edited:item.edited_content||''});
+    // 부서별 그룹핑 (org_code 기준)
+    var deptGroups = {};
+    var deptOrder = [];
+    reports.forEach(function(report){
+      var dKey = report.org_code || 'ETC';
+      if(!deptGroups[dKey]){ deptGroups[dKey]=[]; deptOrder.push(dKey); }
+      deptGroups[dKey].push(report);
     });
 
-    var h = '';
-    h += '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.07)">';
+    var allHtml = '';
 
-    // 타이틀바
-    h += '<div style="background:linear-gradient(135deg,#1B6B3A 0%,#0f4d2a 100%);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
-    var deptNm = report.org_code ? getDeptName(report.org_code) : getDeptName(CU.org_code||CU.dept_code||'');
-    h += '<div>';
-    h += '<div style="font-size:12px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:.8px;margin-bottom:4px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 10px;border-radius:20px">'+esc(deptNm)+'</div>';
-    h += '<div style="font-size:16px;font-weight:800;color:#fff">'+esc(report.week_label||'주간보고')+'</div>';
-    h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(CU.name||'')+' · '+esc(CU.position_name||'')+'</div>';
+    deptOrder.forEach(function(deptKey){
+      var deptReports = deptGroups[deptKey];
+      var deptName = getDeptName(deptKey);
+
+      // 부서 섹션 헤더 (여러 부서일 때만)
+      if(deptOrder.length > 1){
+        allHtml += '<div style="font-size:11px;font-weight:800;color:var(--txt-m);letter-spacing:.5px;margin:16px 0 8px;padding-left:4px">📁 '+esc(deptName)+'</div>';
+      }
+
+      deptReports.forEach(function(report){
+        var items = report.weekly_report_items || [];
+        var catGroups = {};
+        var catOrder = [];
+        items.forEach(function(item){
+          var dr = item.daily_reports;
+          if(!dr) return;
+          var cat = dr.category_code||'ADMIN';
+          if(!catGroups[cat]){ catGroups[cat]=[]; catOrder.push(cat); }
+          catGroups[cat].push({dr:dr, edited:item.edited_content||''});
+        });
+
+        var h = '';
+        h += '<div style="background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,.07)">';
+
+        // 타이틀바
+        h += '<div style="background:linear-gradient(135deg,#1B6B3A 0%,#0f4d2a 100%);padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
+        var deptNm = getDeptName(report.org_code||'');
+        h += '<div>';
+        h += '<div style="font-size:12px;color:rgba(255,255,255,.9);font-weight:800;letter-spacing:.8px;margin-bottom:4px;background:rgba(255,255,255,.15);display:inline-block;padding:2px 10px;border-radius:20px">'+esc(deptNm)+'</div>';
+        h += '<div style="font-size:16px;font-weight:800;color:#fff">'+esc(report.week_label||'주간보고')+'</div>';
+        h += '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:3px">'+esc(report.author_name||'')+' · '+esc(report.author_position||'')+'</div>';
     h += '</div>';
     h += '<div style="display:flex;gap:8px;align-items:center">';
     h += '<span style="font-size:11px;background:rgba(255,255,255,.2);color:#fff;padding:3px 10px;border-radius:20px">'+(report.stage==='submitted'?'제출완료':'임시저장')+'</span>';
@@ -3615,7 +3718,11 @@ async function loadWeeklyDetail(){
     }
     h += '</div></div></div>';
 
-    wrap.innerHTML = h;
+        allHtml += h;
+      }); // end deptReports.forEach
+    }); // end deptOrder.forEach
+
+    wrap.innerHTML = allHtml;
   }catch(e){
     console.error('loadWeeklyDetail 오류', e);
     toast('주간보고 조회 중 오류가 발생했습니다','err');
