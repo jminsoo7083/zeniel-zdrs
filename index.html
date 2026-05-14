@@ -3462,7 +3462,7 @@ function rptItemHTML(r){
         html += '</div>';
       });
     } else if(wr.summary){
-      html += '<div style="font-size:12px;color:#374151;white-space:pre-wrap">'+esc(wr.summary)+'</div>';
+      html += '<div style="font-size:12px;color:#374151">'+esc(wr.summary)+'</div>';
     } else {
       html += '<div style="font-size:11px;color:#aaa">일일보고 연결 없음</div>';
     }
@@ -3470,7 +3470,7 @@ function rptItemHTML(r){
     // 차주
     html += '<div>';
     html += '<div style="font-size:11px;font-weight:800;color:#1D4ED8;margin-bottom:8px">차주 계획</div>';
-    html += '<div style="font-size:12px;color:#1e3a5f;white-space:pre-wrap">'+esc(wr.next_week_plan||'-')+'</div>';
+    html += '<div style="font-size:12px;color:#1e3a5f">'+esc(wr.next_week_plan||'-')+'</div>';
     if(wr.decision_request){
       html += '<div style="margin-top:8px;font-size:11px;color:#C2410C;background:#FFF7ED;padding:6px 8px;border-radius:5px">⚡ '+esc(wr.decision_request)+'</div>';
     }
@@ -4106,7 +4106,7 @@ async function loadWeeklyDetail(){
     } else {
       // 연결된 일일보고 없을 때 - summary 또는 안내 표시
       if(report.summary){
-        h += '<div style="font-size:13px;color:#374151;line-height:1.7;white-space:pre-wrap">'+esc(report.summary)+'</div>';
+        h += '<div style="font-size:13px;color:#374151;line-height:1.7">'+esc(report.summary)+'</div>';
       } else {
         h += '<div style="color:var(--txt-m);font-size:12px;padding:16px 0;text-align:center;line-height:1.7">';
         h += '일일보고 연결 항목이 없습니다<br>';
@@ -4121,14 +4121,14 @@ async function loadWeeklyDetail(){
     h += '<div style="font-size:12px;font-weight:800;color:#1D4ED8;margin-bottom:14px;display:flex;align-items:center;gap:6px">';
     h += '<span style="background:#1D4ED8;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px">차주</span> 업무 계획</div>';
     if(report.next_week_plan){
-      h += '<div style="font-size:13px;color:#1e3a5f;line-height:1.8;white-space:pre-wrap">'+esc(report.next_week_plan)+'</div>';
+      h += '<div style="font-size:13px;color:#1e3a5f;line-height:1.8">'+esc(report.next_week_plan)+'</div>';
     } else {
       h += '<div style="color:var(--txt-m);font-size:12px;padding:20px 0;text-align:center">차주 계획이 없습니다</div>';
     }
     if(report.decision_request){
       h += '<div style="margin-top:16px;padding:12px 14px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
       h += '<div style="font-size:11px;font-weight:800;color:#C2410C;margin-bottom:5px">⚡ 의사결정 / 상위 요청</div>';
-      h += '<div style="font-size:12px;color:#7c2d12;line-height:1.65;white-space:pre-wrap">'+esc(report.decision_request)+'</div></div>';
+      h += '<div style="font-size:12px;color:#7c2d12;line-height:1.65">'+esc(report.decision_request)+'</div></div>';
     }
     h += '</div></div></div>';
 
@@ -4261,7 +4261,8 @@ async function loadWeeklyDailyList(){
         if(isIssue) listHtml += '<span style="font-size:10px;background:#FEE2E2;color:#DC2626;padding:1px 6px;border-radius:10px">⚠ 이슈</span>';
         listHtml += '</div>';
         // 내용 수정 가능 textarea
-        listHtml += '<textarea data-id="'+r.id+'" name="wk-content-'+r.id+'" style="width:100%;font-size:12px;color:var(--txt-b);line-height:1.6;min-height:48px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical;background:#fafafa;box-sizing:border-box">'+esc(r.content_original||'')+'</textarea>';
+        var taContent = (r.content_original||'').replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'');
+        listHtml += '<textarea data-id="'+r.id+'" name="wk-content-'+r.id+'" style="width:100%;font-size:12px;color:var(--txt-b);line-height:1.6;min-height:48px;border:1px solid var(--border);border-radius:6px;padding:6px 8px;resize:vertical;background:#fafafa;box-sizing:border-box">'+esc(taContent)+'</textarea>';
         // 이슈 내용 있으면 별도 표시
         if(isIssue && r.issue_content){
           listHtml += '<div style="font-size:11px;color:#dc2626;background:#fef2f2;padding:4px 8px;border-radius:4px;margin-top:4px">⚠ '+esc(r.issue_content)+'</div>';
@@ -4456,7 +4457,7 @@ function renderMeetingSections(rpts){
       if(w.next_week_plan){
         html += '<div style="padding:10px 12px;background:#EFF6FF;border-radius:8px;border-left:3px solid #1D4ED8;margin-bottom:8px">';
         html += '<div style="font-size:11px;font-weight:700;color:#1D4ED8;margin-bottom:4px">▶ 차주 계획</div>';
-        html += '<div style="font-size:12px;color:#1e3a5f;white-space:pre-wrap">'+esc(w.next_week_plan)+'</div>';
+        html += '<div style="font-size:12px;color:#1e3a5f">'+esc(w.next_week_plan)+'</div>';
         html += '</div>';
       }
 
@@ -4464,7 +4465,7 @@ function renderMeetingSections(rpts){
       if(w.decision_request){
         html += '<div style="padding:10px 12px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
         html += '<div style="font-size:11px;font-weight:700;color:#C2410C;margin-bottom:4px">⚡ 의사결정 / 상위 요청</div>';
-        html += '<div style="font-size:12px;color:#7c2d12;white-space:pre-wrap">'+esc(w.decision_request)+'</div>';
+        html += '<div style="font-size:12px;color:#7c2d12">'+esc(w.decision_request)+'</div>';
         html += '</div>';
       }
 
