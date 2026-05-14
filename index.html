@@ -3040,6 +3040,12 @@ function setEditorHTML(id, html){
   }
 }
 
+
+function renderRich(v){
+  if(!v) return '';
+  if(v.indexOf('<') !== -1) return v;
+  return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
 async function loadMy(){
   if(!CU) return; // 로그인 전 호출 방지
   var _dfEl = document.getElementById('f-my-date-from'); var dateFrom = _dfEl ? _dfEl.value : '';
@@ -3462,7 +3468,7 @@ function rptItemHTML(r){
         html += '</div>';
       });
     } else if(wr.summary){
-      html += '<div style="font-size:12px;color:#374151">'+esc(wr.summary)+'</div>';
+      html += '<div style="font-size:12px;color:#374151">'+renderRich(wr.summary||'')+'</div>';
     } else {
       html += '<div style="font-size:11px;color:#aaa">일일보고 연결 없음</div>';
     }
@@ -3470,9 +3476,9 @@ function rptItemHTML(r){
     // 차주
     html += '<div>';
     html += '<div style="font-size:11px;font-weight:800;color:#1D4ED8;margin-bottom:8px">차주 계획</div>';
-    html += '<div style="font-size:12px;color:#1e3a5f">'+esc(wr.next_week_plan||'-')+'</div>';
+    html += '<div style="font-size:12px;color:#1e3a5f">'+renderRich(wr.next_week_plan||'-')+'</div>';
     if(wr.decision_request){
-      html += '<div style="margin-top:8px;font-size:11px;color:#C2410C;background:#FFF7ED;padding:6px 8px;border-radius:5px">⚡ '+esc(wr.decision_request)+'</div>';
+      html += '<div style="margin-top:8px;font-size:11px;color:#C2410C;background:#FFF7ED;padding:6px 8px;border-radius:5px">⚡ '+renderRich(wr.decision_request||'')+'</div>';
     }
     html += '</div></div>';
     html += '<div style="display:flex;justify-content:flex-end;margin-top:6px">';
@@ -4106,7 +4112,7 @@ async function loadWeeklyDetail(){
     } else {
       // 연결된 일일보고 없을 때 - summary 또는 안내 표시
       if(report.summary){
-        h += '<div style="font-size:13px;color:#374151;line-height:1.7">'+esc(report.summary)+'</div>';
+        h += '<div style="font-size:13px;color:#374151;line-height:1.7">'+renderRich(report.summary||'')+'</div>';
       } else {
         h += '<div style="color:var(--txt-m);font-size:12px;padding:16px 0;text-align:center;line-height:1.7">';
         h += '일일보고 연결 항목이 없습니다<br>';
@@ -4128,7 +4134,7 @@ async function loadWeeklyDetail(){
     if(report.decision_request){
       h += '<div style="margin-top:16px;padding:12px 14px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
       h += '<div style="font-size:11px;font-weight:800;color:#C2410C;margin-bottom:5px">⚡ 의사결정 / 상위 요청</div>';
-      h += '<div style="font-size:12px;color:#7c2d12;line-height:1.65">'+esc(report.decision_request)+'</div></div>';
+      h += '<div style="font-size:12px;color:#7c2d12;line-height:1.65">'+renderRich(report.decision_request||'')+'</div></div>';
     }
     h += '</div></div></div>';
 
@@ -4457,7 +4463,7 @@ function renderMeetingSections(rpts){
       if(w.next_week_plan){
         html += '<div style="padding:10px 12px;background:#EFF6FF;border-radius:8px;border-left:3px solid #1D4ED8;margin-bottom:8px">';
         html += '<div style="font-size:11px;font-weight:700;color:#1D4ED8;margin-bottom:4px">▶ 차주 계획</div>';
-        html += '<div style="font-size:12px;color:#1e3a5f">'+esc(w.next_week_plan)+'</div>';
+        html += '<div style="font-size:12px;color:#1e3a5f">'+renderRich(w.next_week_plan||'')+'</div>';
         html += '</div>';
       }
 
@@ -4465,7 +4471,7 @@ function renderMeetingSections(rpts){
       if(w.decision_request){
         html += '<div style="padding:10px 12px;background:#FFF7ED;border-radius:8px;border-left:3px solid #C2410C">';
         html += '<div style="font-size:11px;font-weight:700;color:#C2410C;margin-bottom:4px">⚡ 의사결정 / 상위 요청</div>';
-        html += '<div style="font-size:12px;color:#7c2d12">'+esc(w.decision_request)+'</div>';
+        html += '<div style="font-size:12px;color:#7c2d12">'+renderRich(w.decision_request||'')+'</div>';
         html += '</div>';
       }
 
