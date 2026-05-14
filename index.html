@@ -3000,6 +3000,16 @@ function rtbInsertImage(edId){
 
 // placeholder 처리
 document.addEventListener('DOMContentLoaded', function(){
+  // 리치에디터 붙여넣기 - plain text 추출 (Word/HWP 스타일 제거)
+  document.addEventListener('paste', function(e){
+    var ed = e.target.closest('.rich-editor');
+    if(!ed) return;
+    e.preventDefault();
+    var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+    if(!text) return;
+    document.execCommand('insertText', false, text);
+  });
+
   document.querySelectorAll('.rich-editor[data-placeholder]').forEach(function(ed){
     if(!ed.textContent.trim()){
       ed.style.color = 'var(--txt-m)';
@@ -3045,10 +3055,48 @@ function setEditorHTML(id, html){
 }
 
 
+function sanitizeRich(dirty){
+  if(!dirty) return '';
+  var tmp = document.createElement('div');
+  tmp.innerHTML = dirty;
+  function clean(node){
+    var out = '';
+    node.childNodes.forEach(function(n){
+      if(n.nodeType===3){
+        out += n.textContent
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        return;
+      }
+      if(n.nodeType!==1) return;
+      var t = n.tagName.toLowerCase();
+      if(t==='b'||t==='strong'){ out += '<b>'+clean(n)+'</b>'; }
+      else if(t==='u'){ out += '<u>'+clean(n)+'</u>'; }
+      else if(t==='s'||t==='strike'){ out += '<s>'+clean(n)+'</s>'; }
+      else if(t==='br'){ out += '<br>'; }
+      else if(t==='hr'){ out += '<hr>'; }
+      else if(t==='img'){
+        var src = n.getAttribute('src')||'';
+        if(src.indexOf('data:image')===0) out += '<img src="'+src+'" style="max-width:100%;border-radius:6px;margin:4px 0">';
+      }
+      else if(t==='p'||t==='div'||t==='li'){
+        var inner = clean(n);
+        if(inner.trim()) out += inner + '<br>';
+      }
+      else { out += clean(n); }
+    });
+    return out;
+  }
+  var r = clean(tmp);
+  r = r.replace(/(<br>){3,}/g,'<br><br>').replace(/^(<br>)+|(<br>)+$/g,'');
+  return r;
+}
+
 function renderRich(v){
   if(!v) return '';
-  if(v.indexOf('<') !== -1) return v;
-  return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  if(v.indexOf('<')===-1){
+    return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+  }
+  return sanitizeRich(v);
 }
 async function loadMy(){
   if(!CU) return; // 로그인 전 호출 방지
@@ -4956,10 +5004,11 @@ function addItem(prefill){
   h += '<button class="sel-btn '+(defaultSt==='진행'?'s-wip':'')+'" id="msbW-'+idx+'" onclick="setIS('+idx+',1)">🔄 진행</button>';
   h += '<button class="sel-btn '+(defaultSt==='이월'?'s-next':'')+'" id="msbN-'+idx+'" onclick="setIS('+idx+',2)">➡ 이월</button>';
   h += '</div></div>';
-  h += '<div class="fg2" style="margin-bottom:0"><label>진척도 <span style="font-weight:400;color:var(--txt-m);font-size:11px">0~100%</span></label>';
-  h += '<div style="display:flex;align-items:center;gap:6px">';
-  h += '<input type="number" id="mprogress-'+idx+'" min="0" max="100" value="'+defaultProgress+'" style="width:70px;text-align:center">';
-  h += '<span style="font-size:13px;color:var(--txt-m)">%</span>';
+    h += '<div class="fg2" style="margin-bottom:0"><label>진척도 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(드래그)</span></label>';
+  h += '<div style="display:flex;align-items:center;gap:8px">';
+  h += '<input type="range" id="mprogress-'+idx+'" min="0" max="100" step="10" value="'+defaultProgress+'"';
+  h += ' style="flex:1;accent-color:var(--z-green);cursor:pointer" oninput="this.nextElementSibling.textContent=this.value+\'%\'">';
+  h += '<span id="mprogressval-'+idx+'" style="font-size:13px;font-weight:800;color:var(--z-green);min-width:38px;text-align:right">'+defaultProgress+'%</span>';
   h += '</div></div>';
   h += '</div>';
   h += '<div class="fg2"><label>우선순위</label><div class="sel-row">';
