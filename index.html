@@ -1867,9 +1867,13 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <div style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
             <label style="font-size:13px;font-weight:700;color:var(--txt-h);margin:0">📋 이번 주 업무 <span style="font-weight:400;color:var(--txt-m);font-size:11px">일일보고 자동 수집 · 내용 수정 가능</span></label>
-            <span id="wk-issue-cnt" style="font-size:11px;color:var(--z-green-d);font-weight:700"></span>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="wk-issue-cnt" style="font-size:11px;color:var(--z-green-d);font-weight:700"></span>
+              <button onclick="wkCheckAll(true)" class="btn btn-ghost btn-xs" style="font-size:10px;padding:2px 7px">전체선택</button>
+              <button onclick="wkCheckAll(false)" class="btn btn-ghost btn-xs" style="font-size:10px;padding:2px 7px">전체해제</button>
+            </div>
           </div>
-          <div style="font-size:11px;color:var(--txt-m);margin-bottom:8px" id="wk-issue-desc">체크된 업무가 금주 실적에 포함됩니다 · 내용을 직접 수정할 수 있습니다</div>
+          <div style="font-size:11px;color:var(--txt-m);margin-bottom:8px" id="wk-issue-desc">포함할 업무를 체크하세요 · 내용을 직접 수정할 수 있습니다</div>
           <div id="wk-daily-list" style="border:1px solid var(--border);border-radius:8px;max-height:320px;overflow-y:auto;background:#fafafa">
             <div style="padding:20px;text-align:center;color:var(--txt-m);font-size:13px">주차를 선택하면 이번 주 업무가 표시됩니다</div>
           </div>
@@ -4257,7 +4261,7 @@ async function loadWeeklyDailyList(){
         listHtml += '<div style="padding:10px 14px;border-bottom:1px solid var(--border);background:#fff">';
         listHtml += '<div style="display:flex;align-items:flex-start;gap:10px">';
         // 체크박스
-        listHtml += '<input type="checkbox" name="wk-daily-sel" value="'+r.id+'" style="margin-top:4px;flex-shrink:0;accent-color:var(--z-green);width:15px;height:15px" checked>';
+        listHtml += '<input type="checkbox" name="wk-daily-sel" value="'+r.id+'" style="margin-top:4px;flex-shrink:0;accent-color:var(--z-green);width:15px;height:15px">';
         listHtml += '<div style="flex:1;min-width:0">';
         // 제목줄
         listHtml += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap">';
@@ -4290,6 +4294,12 @@ async function loadWeeklyDailyList(){
 }
 
 // 주간보고 저장 시 수정된 내용 수집
+
+function wkCheckAll(checked){
+  document.querySelectorAll('input[name="wk-daily-sel"]').forEach(function(cb){
+    cb.checked = checked;
+  });
+}
 function getEditedContents(){
   var result = {};
   var textareas = document.querySelectorAll('#wk-daily-list textarea[data-id]');
@@ -4400,12 +4410,32 @@ async function editWeeklyReport(id){
 
     await loadWeeklyDailyList();
 
-    // 기존 연결 항목 체크 표시
-    var itemRes = await sb.from('weekly_report_items').select('daily_report_id').eq('weekly_report_id', id);
-    if(itemRes.data){
+    // ★ 저장된 선택 항목만 체크 + edited_content 복원
+    var itemRes = await sb.from('weekly_report_items')
+      .select('daily_report_id, edited_content')
+      .eq('weekly_report_id', id);
+
+    if(itemRes.data && itemRes.data.length){
+      // 먼저 전체 체크 해제
+      document.querySelectorAll('input[name="wk-daily-sel"]').forEach(function(cb){
+        cb.checked = false;
+      });
+      // 저장된 항목만 체크 + 내용 복원
       itemRes.data.forEach(function(item){
         var cb = document.querySelector('input[name="wk-daily-sel"][value="'+item.daily_report_id+'"]');
-        if(cb) cb.checked = true;
+        if(cb){
+          cb.checked = true;
+          // edited_content 있으면 textarea에 반영
+          if(item.edited_content){
+            var ta = document.querySelector('textarea[data-id="'+item.daily_report_id+'"]');
+            if(ta){
+              var cleanContent = item.edited_content
+                .replace(/<br\s*\/?>/gi,'\n')
+                .replace(/<[^>]+>/g,'');
+              ta.value = cleanContent;
+            }
+          }
+        }
       });
     }
   }catch(e){
