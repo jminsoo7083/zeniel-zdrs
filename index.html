@@ -1328,6 +1328,39 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
   .toast-wrap { bottom: calc(var(--mob-nav) + 12px); right: 12px; left: 12px; }
   .toast { max-width: 100%; }
 }
+
+/* ── 서식 에디터 ── */
+.rich-toolbar {
+  display:flex; gap:3px; padding:6px 8px;
+  background:var(--z-green-s); border:1px solid var(--border);
+  border-bottom:none; border-radius:8px 8px 0 0; flex-wrap:wrap;
+}
+.rtb-btn {
+  padding:3px 8px; border:1px solid transparent; border-radius:5px;
+  background:none; cursor:pointer; font-size:12px; color:var(--txt-b);
+  transition:all .15s; line-height:1.4;
+}
+.rtb-btn:hover { background:#fff; border-color:var(--border); }
+.rtb-btn.active { background:#fff; border-color:var(--z-green); color:var(--z-green); }
+.rtb-sep { width:1px; background:var(--border); margin:2px 2px; flex-shrink:0; }
+.rich-editor {
+  width:100%; min-height:100px; padding:10px 12px;
+  border:1px solid var(--border); border-radius:0 0 8px 8px;
+  font-size:13px; line-height:1.7; color:var(--txt-b);
+  background:#fff; outline:none; overflow-y:auto;
+  white-space:pre-wrap; word-break:break-word;
+}
+.rich-editor:focus { border-color:var(--z-green); }
+.rich-editor b, .rich-editor strong { font-weight:800; color:var(--txt-h); }
+.rich-editor u { text-decoration:underline; text-underline-offset:2px; }
+.rich-editor hr { border:none; border-top:1.5px solid var(--border); margin:8px 0; }
+.rich-editor img { max-width:100%; border-radius:6px; margin:6px 0; display:block; }
+
+.rich-view b, .rich-view strong { font-weight: 800; }
+.rich-view u { text-decoration: underline; text-underline-offset: 2px; }
+.rich-view hr { border: none; border-top: 1.5px solid var(--border); margin: 8px 0; }
+.rich-view img { max-width: 100%; border-radius: 6px; margin: 6px 0; display: block; }
+.rich-view s { text-decoration: line-through; color: var(--txt-m); }
 </style>
 </head>
 <body>
@@ -1844,17 +1877,40 @@ body.presentation .cat-sec-hdr{padding:13px 16px;}
         <!-- 이번 주 요약 -->
         <div class="fg2" style="margin-bottom:14px">
           <label>이번 주 주요 성과 / 진행 현황 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
-          <textarea id="wk-summary" placeholder="이번 주 핵심 성과와 현황을 자유롭게 정리하세요" style="min-height:80px"></textarea>
+          <div class="rich-toolbar" data-target="wk-summary-ed">
+            <button class="rtb-btn" onclick="rtbCmd('bold')" title="굵게"><b>B</b></button>
+            <button class="rtb-btn" onclick="rtbCmd('underline')" title="밑줄"><u>U</u></button>
+            <div class="rtb-sep"></div>
+            <button class="rtb-btn" onclick="rtbInsertLine()" title="구분선">— 구분선</button>
+            <button class="rtb-btn" onclick="rtbInsertImage('wk-summary-ed')" title="이미지">🖼 이미지</button>
+          </div>
+          <div id="wk-summary-ed" class="rich-editor" contenteditable="true" style="min-height:80px" data-placeholder="이번 주 핵심 성과와 현황을 자유롭게 정리하세요"></div>
         </div>
         <!-- 차주 계획 -->
         <div class="fg2" style="margin-bottom:14px">
           <label>차주 계획 <span style="color:#e53e3e;font-size:11px">*</span></label>
-          <textarea id="wk-next-plan" placeholder="다음 주 주요 추진 계획을 작성하세요" style="min-height:100px"></textarea>
+          <div class="rich-toolbar" data-target="wk-next-plan-ed">
+            <button class="rtb-btn" onclick="rtbCmd('bold')" title="굵게"><b>B</b></button>
+            <button class="rtb-btn" onclick="rtbCmd('underline')" title="밑줄"><u>U</u></button>
+            <button class="rtb-btn" onclick="rtbCmd('strikeThrough')" title="취소선"><s>S</s></button>
+            <div class="rtb-sep"></div>
+            <button class="rtb-btn" onclick="rtbInsertLine()" title="구분선">— 구분선</button>
+            <button class="rtb-btn" onclick="rtbInsertBullet()" title="항목">· 항목</button>
+            <div class="rtb-sep"></div>
+            <button class="rtb-btn" onclick="rtbInsertImage('wk-next-plan-ed')" title="이미지">🖼 이미지</button>
+          </div>
+          <div id="wk-next-plan-ed" class="rich-editor" contenteditable="true" data-placeholder="다음 주 주요 추진 계획을 작성하세요"></div>
         </div>
         <!-- 의사결정 요청 -->
         <div class="fg2" style="margin-bottom:4px">
           <label>의사결정 / 상위 요청 <span style="font-weight:400;color:var(--txt-m);font-size:11px">(선택)</span></label>
-          <textarea id="wk-decision" placeholder="상위 판단이 필요한 사항이나 지원 요청 내용을 작성하세요" style="min-height:70px"></textarea>
+          <div class="rich-toolbar" data-target="wk-decision-ed">
+            <button class="rtb-btn" onclick="rtbCmd('bold')" title="굵게"><b>B</b></button>
+            <button class="rtb-btn" onclick="rtbCmd('underline')" title="밑줄"><u>U</u></button>
+            <div class="rtb-sep"></div>
+            <button class="rtb-btn" onclick="rtbInsertLine()" title="구분선">— 구분선</button>
+          </div>
+          <div id="wk-decision-ed" class="rich-editor" contenteditable="true" style="min-height:70px" data-placeholder="상위 판단이 필요한 사항이나 지원 요청 내용을 작성하세요"></div>
         </div>
       </div>
       <!-- 푸터 고정 -->
@@ -2879,6 +2935,109 @@ function startDraftTimer(){
 }
 function stopDraftTimer(){
   clearInterval(draftTimer);
+}
+
+
+// ══════════════════════════════════════════════
+// 리치 에디터
+// ══════════════════════════════════════════════
+var _rtbTarget = null;
+
+// 툴바 클릭 시 대상 에디터 설정
+document.addEventListener('mousedown', function(e){
+  var toolbar = e.target.closest('.rich-toolbar');
+  if(toolbar){
+    var targetId = toolbar.dataset.target;
+    if(targetId) _rtbTarget = document.getElementById(targetId);
+    e.preventDefault(); // 포커스 유지
+  } else {
+    var ed = e.target.closest('.rich-editor');
+    if(ed) _rtbTarget = ed;
+  }
+});
+
+function rtbCmd(cmd){
+  if(!_rtbTarget) return;
+  _rtbTarget.focus();
+  document.execCommand(cmd, false, null);
+}
+
+function rtbInsertLine(){
+  if(!_rtbTarget) return;
+  _rtbTarget.focus();
+  document.execCommand('insertHTML', false, '<hr>');
+}
+
+function rtbInsertBullet(){
+  if(!_rtbTarget) return;
+  _rtbTarget.focus();
+  document.execCommand('insertHTML', false, '<br>· ');
+}
+
+function rtbInsertImage(edId){
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = function(){
+    var file = input.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var ed = document.getElementById(edId);
+      if(!ed) return;
+      ed.focus();
+      _rtbTarget = ed;
+      document.execCommand('insertHTML', false, '<img src="'+e.target.result+'" style="max-width:100%;border-radius:6px;margin:6px 0">');
+    };
+    reader.readAsDataURL(file);
+  };
+  input.click();
+}
+
+// placeholder 처리
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('.rich-editor[data-placeholder]').forEach(function(ed){
+    if(!ed.textContent.trim()){
+      ed.style.color = 'var(--txt-m)';
+      ed.textContent = ed.dataset.placeholder;
+    }
+    ed.addEventListener('focus', function(){
+      if(ed.textContent === ed.dataset.placeholder){
+        ed.textContent = '';
+        ed.style.color = 'var(--txt-b)';
+      }
+    });
+    ed.addEventListener('blur', function(){
+      if(!ed.textContent.trim()){
+        ed.textContent = ed.dataset.placeholder;
+        ed.style.color = 'var(--txt-m)';
+      }
+    });
+  });
+});
+
+// 에디터 값 읽기 헬퍼
+function getEditorHTML(id){
+  var el = document.getElementById(id);
+  if(!el) return '';
+  var val = el.innerHTML || '';
+  var placeholder = el.dataset.placeholder || '';
+  // placeholder 텍스트면 빈값 반환
+  if(el.textContent.trim() === placeholder) return '';
+  return val;
+}
+
+// 에디터 값 세팅 헬퍼
+function setEditorHTML(id, html){
+  var el = document.getElementById(id);
+  if(!el) return;
+  if(html && html.trim()){
+    el.innerHTML = html;
+    el.style.color = 'var(--txt-b)';
+  } else {
+    el.textContent = el.dataset.placeholder || '';
+    el.style.color = 'var(--txt-m)';
+  }
 }
 
 async function loadMy(){
@@ -3987,9 +4146,9 @@ async function loadWeeklyDetail(){
 // 주간보고 모달 열기
 function openWeeklyModal(editId){
   buildWeekOptions('wk-modal-week');
-  document.getElementById('wk-summary').value = '';
-  document.getElementById('wk-next-plan').value = '';
-  document.getElementById('wk-decision').value = '';
+  setEditorHTML('wk-summary-ed', '');
+  setEditorHTML('wk-next-plan-ed', '');
+  setEditorHTML('wk-decision-ed', '');
   document.getElementById('weekly-modal-bg').dataset.editId = editId || '';
   // 권한별 이슈 섹션 라벨 변경
   var descEl = document.getElementById('wk-issue-desc');
@@ -4136,9 +4295,9 @@ function getEditedContents(){
 
 async function saveWeeklyReport(){
   var sel = document.getElementById('wk-modal-week');
-  var nextPlan = document.getElementById('wk-next-plan').value.trim();
-  var summary = document.getElementById('wk-summary').value.trim();
-  var decision = document.getElementById('wk-decision').value.trim();
+  var nextPlan = getEditorHTML('wk-next-plan-ed');
+  var summary  = getEditorHTML('wk-summary-ed');
+  var decision = getEditorHTML('wk-decision-ed');
 
   if(!nextPlan){ toast('차주 계획을 입력하세요','err'); return; }
 
@@ -4226,9 +4385,9 @@ async function editWeeklyReport(id){
     var sel = document.getElementById('wk-modal-week');
     sel.value = r.year_num+'-'+r.week_number;
 
-    document.getElementById('wk-summary').value = r.summary || '';
-    document.getElementById('wk-next-plan').value = r.next_week_plan || '';
-    document.getElementById('wk-decision').value = r.decision_request || '';
+    setEditorHTML('wk-summary-ed', r.summary || '');
+    setEditorHTML('wk-next-plan-ed', r.next_week_plan || '');
+    setEditorHTML('wk-decision-ed', r.decision_request || '');
     document.getElementById('weekly-modal-bg').dataset.editId = id;
     document.getElementById('weekly-modal-bg').style.cssText = 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center;padding:16px;box-sizing:border-box';
 
