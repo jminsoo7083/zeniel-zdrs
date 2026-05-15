@@ -3055,6 +3055,23 @@ function setEditorHTML(id, html){
 }
 
 
+
+// 일반 업무 내용 표시 - br→줄바꿈, 나머지 HTML 태그 제거
+
+// 업무 내용을 번호/항목별로 파싱해서 가독성 높게 표시
+function formatContent(v){
+  if(!v) return '';
+  var cleaned = displayContent(v);
+  return cleaned;
+}
+function displayContent(v){
+  if(!v) return '';
+  // HTML 태그 포함 여부
+  if(v.indexOf('<') === -1) return esc(v).replace(/\n/g,'<br>');
+  // br만 줄바꿈으로 변환 후 나머지 태그 제거
+  var tmp = v.replace(/<br\s*\/?>/gi,'\n').replace(/<[^>]+>/g,'');
+  return esc(tmp).replace(/\n/g,'<br>');
+}
 function sanitizeRich(dirty){
   if(!dirty) return '';
   var tmp = document.createElement('div');
@@ -3681,7 +3698,7 @@ async function loadIssueMaster(){
           ${i.decision_required?'<span class="bdg" style="background:#FEF3C7;color:#B45309">의사결정 필요</span>':''}
         </div>
         <div style="font-size:14px;font-weight:700;color:var(--txt-h);margin-bottom:6px">${esc(i.issue_title)}</div>
-        <div style="font-size:12px;color:var(--txt-b);line-height:1.55;margin-bottom:8px">${esc(i.summary_current||'')}</div>
+        <div style="font-size:12px;color:var(--txt-b);line-height:1.55;margin-bottom:8px">${displayContent(i.summary_current||'')}</div>
         ${i.impact_summary?`<div style="font-size:12px;color:var(--danger);background:#FEF2F2;padding:8px 12px;border-radius:6px;margin-bottom:6px">영향/리스크 · ${esc(i.impact_summary)}</div>`:''}
         ${i.action_plan?`<div style="font-size:12px;color:var(--z-green-d);background:var(--z-green-s);padding:8px 12px;border-radius:6px">차주 계획 · ${esc(i.action_plan)}</div>`:''}
       </div>
@@ -4150,7 +4167,7 @@ async function loadWeeklyDetail(){
           h += '<span style="font-size:10px;padding:1px 6px;border-radius:10px;background:'+stB+';color:'+stC+'">'+esc(dr.status||'진행')+'</span>';
           h += '</div>';
           h += '</div>';
-          h += '<div style="font-size:11px;color:#374151;line-height:1.6">'+esc(content)+'</div>';
+          h += '<div style="font-size:11px;color:#374151;line-height:1.6">'+displayContent(content)+'</div>';
           if(prog!==undefined&&prog!==null&&prog>0){
             h += '<div style="margin-top:5px;background:#e5e7eb;border-radius:4px;height:4px;overflow:hidden">';
             h += '<div style="width:'+prog+'%;background:'+(prog>=100?'#065f46':prog>=70?'#1B6B3A':'#60a5fa')+';height:100%;border-radius:4px;transition:width .3s"></div>';
@@ -4179,7 +4196,7 @@ async function loadWeeklyDetail(){
     h += '<div style="font-size:12px;font-weight:800;color:#1D4ED8;margin-bottom:14px;display:flex;align-items:center;gap:6px">';
     h += '<span style="background:#1D4ED8;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px">차주</span> 업무 계획</div>';
     if(report.next_week_plan){
-      h += '<div style="font-size:13px;color:#1e3a5f;line-height:1.8">'+esc(report.next_week_plan)+'</div>';
+      h += '<div style="font-size:13px;color:#1e3a5f;line-height:1.8" class="rich-view">'+renderRich(report.next_week_plan||'')+'</div>';
     } else {
       h += '<div style="color:var(--txt-m);font-size:12px;padding:20px 0;text-align:center">차주 계획이 없습니다</div>';
     }
